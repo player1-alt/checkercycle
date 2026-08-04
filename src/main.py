@@ -1,31 +1,34 @@
 from src.domains.checkers.game_state import GameState
-from src.domains.checkers.move import Move
-from src.domains.checkers.variation import Variation
+from src.domains.checkers.book_parser import CheckersBookParser
 from src.player.variation_player import VariationPlayer
 from src.renderer.renderer import Renderer
 
 
 def main():
 
+    # Create game state
     game_state = GameState()
 
-    renderer = Renderer()
+    # Load game from file
+    with open("data/sample_game.txt", "r") as file:
+        notation = file.read()
 
-    variation = Variation(
-        "Test Opening",
-        [
-            Move(11, 15),
-            Move(23, 18),
-            Move(8, 11)
-        ]
+    parser = CheckersBookParser()
+
+    variation = parser.parse_book(
+        notation,
+        "Sample Game"
     )
+
+    # Create renderer and player
+    renderer = Renderer()
 
     player = VariationPlayer(
         game_state,
-        renderer,
-        interval=2
+        renderer
     )
 
+    # Play imported game
     player.play(variation)
 
 

@@ -10,6 +10,28 @@ class AnimationOutput:
         self.square_mapper = SquareMapper()
 
 
+    def generate_frames(self, start, end, steps=5):
+        """
+        Creates movement frames between two coordinates.
+        """
+
+        start_row, start_col = start
+        end_row, end_col = end
+
+        frames = []
+
+        for i in range(steps + 1):
+
+            progress = i / steps
+
+            row = start_row + (end_row - start_row) * progress
+            col = start_col + (end_col - start_col) * progress
+
+            frames.append((round(row, 2), round(col, 2)))
+
+        return frames
+
+
     def display(self, move):
 
         print("ANIMATION OUTPUT:")
@@ -19,11 +41,15 @@ class AnimationOutput:
         end = self.square_mapper.coordinates(move.to_square)
 
         print(f"Square {move.from_square} -> Square {move.to_square}")
+        print(f"Coordinates {start} -> {end}")
 
-        print(
-            f"Coordinates {start} -> {end}"
-        )
+        print()
+        print("Animation frames:")
 
-        print(
-            "Animation path generated."
-        )
+        frames = self.generate_frames(start, end)
+
+        for number, frame in enumerate(frames, start=1):
+
+            print(f"Frame {number}: {frame}")
+
+        print()
