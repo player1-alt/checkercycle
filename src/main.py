@@ -1,33 +1,12 @@
-from src.renderer.renderer import Renderer
-from src.domains.checkers.book_loader import BookLoader
-from src.domains.checkers.book_parser import CheckersBookParser
-from src.domains.checkers.variation import Variation
-from src.player.variation_player import VariationPlayer
+from src.renderer.pieces import Pieces
 
 
 def main():
-    renderer = Renderer()
 
-    loader = BookLoader()
+    pieces = Pieces()
 
-    book_parser = CheckersBookParser()
-
-    # Load the game from a text file
-    book = loader.load("data/sample_game.txt")
-
-    moves = book_parser.parse_book(book)
-
-    variation = Variation(
-        "Sample Game",
-        moves
-    )
-
-    print(variation.describe())
-    print()
-
-    player = VariationPlayer(renderer, interval=2)
-
-    player.play(variation)
+    for square in range(1, 33):
+        print(square, ":", pieces.piece_at(square))
 
 
 if __name__ == "__main__":
