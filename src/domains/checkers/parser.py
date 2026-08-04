@@ -3,48 +3,72 @@ from .move import Move
 
 class CheckersParser:
     """
-    Converts renderer instructions into Move objects.
+    Converts checkers notation into Move objects.
+
+    Supports:
+    11-15
+    23x16x7|19,11
     """
+
 
     def parse(self, notation):
 
         try:
 
-            captured_squares = []
+            notation = notation.strip()
 
-            # Separate movement and captures
-            if "|" in notation:
 
-                movement, captures = notation.split("|")
+            # Capture move
+            if "x" in notation:
 
-                captured_squares = [
+                parts = notation.split("|")
+
+
+                path_text = parts[0]
+
+                path = [
                     int(square)
-                    for square in captures.split(",")
+                    for square in path_text.split("x")
                 ]
 
-            else:
 
-                movement = notation
-
-
-            # Build path
-            separator = "-"
-
-            squares = movement.split(separator)
-
-            path = [
-                int(square)
-                for square in squares
-            ]
+                captured_squares = []
 
 
-            return Move(
-                path,
-                captured_squares=captured_squares
-            )
+                if len(parts) > 1:
+
+                    captured_squares = [
+                        int(square)
+                        for square in parts[1].split(",")
+                    ]
+
+
+                return Move(
+                    path,
+                    is_capture=True,
+                    captured_squares=captured_squares
+                )
+
+
+            # Normal move
+            if "-" in notation:
+
+                path = [
+                    int(square)
+                    for square in notation.split("-")
+                ]
+
+
+                return Move(
+                    path
+                )
+
+
+            print("Unknown notation.")
+            return None
 
 
         except Exception:
 
-            print("Invalid renderer notation.")
+            print("Invalid checkers notation.")
             return None

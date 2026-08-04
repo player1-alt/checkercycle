@@ -81,3 +81,18 @@ class AnimationOutput:
                 )
 
             print()
+
+
+        # Capture events
+        if move.captured_squares:
+
+            print("CAPTURE EVENTS:")
+            print()
+
+            for square in move.captured_squares:
+
+                print(
+                    f"Remove piece from square {square}"
+                )
+
+            print()

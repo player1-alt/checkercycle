@@ -1,35 +1,59 @@
 from src.domains.checkers.game_state import GameState
-from src.domains.checkers.book_parser import CheckersBookParser
-from src.player.variation_player import VariationPlayer
+from src.domains.checkers.game_state_loader import GameStateLoader
+from src.domains.checkers.move import Move
+
 from src.renderer.renderer import Renderer
 
 
 def main():
 
-    # Create game state
     game_state = GameState()
 
-    # Load game from file
-    with open("data/sample_game.txt", "r") as file:
-        notation = file.read()
+    loader = GameStateLoader()
 
-    parser = CheckersBookParser()
 
-    variation = parser.parse_book(
-        notation,
-        "Sample Game"
+    # Load a single white piece
+    loader.load(
+        game_state,
+        {
+            5: "white"
+        },
+        clear=True
     )
 
-    # Create renderer and player
+
+    print("BEFORE MOVE")
+    print(game_state.pieces.position)
+
+
+    # White moves to the king row
+    move = Move(
+        [5, 1]
+    )
+
+
+    game_state.apply_move(move)
+
+
+    print()
+    print("AFTER MOVE")
+    print(game_state.pieces.position)
+
+
+    print()
+    print("KING STATUS:")
+    piece = game_state.pieces.position[1]
+
+    print(piece.king)
+    print(piece.symbol())
+
+
     renderer = Renderer()
 
-    player = VariationPlayer(
+    renderer.render(
         game_state,
-        renderer
+        move
     )
-
-    # Play imported game
-    player.play(variation)
 
 
 if __name__ == "__main__":

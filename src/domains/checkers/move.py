@@ -11,7 +11,6 @@ class Move:
     ):
 
         self.path = path
-
         self.is_capture = is_capture
 
         if captured_squares is None:
@@ -33,15 +32,29 @@ class Move:
     def describe(self):
 
         if self.is_capture:
-            return (
-                f"Capture {self.path} "
-                f"removed {self.captured_squares}"
+
+            path = "x".join(
+                str(square)
+                for square in self.path
             )
 
-        return (
-            f"Move from {self.from_square} "
-            f"to {self.to_square}"
+            captures = ", ".join(
+                str(square)
+                for square in self.captured_squares
+            )
+
+            return (
+                f"{path} "
+                f"(captures: {captures})"
+            )
+
+
+        path = "-".join(
+            str(square)
+            for square in self.path
         )
+
+        return path
 
 
     def __str__(self):

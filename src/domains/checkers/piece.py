@@ -1,29 +1,44 @@
 class Piece:
     """
-    Represents a single checkers piece.
+    Represents a checkers piece.
     """
 
-    def __init__(self, color):
+    def __init__(self, color, king=False):
+
         self.color = color
-        self.king = False
+        self.king = king
+
 
     def promote(self):
-        """
-        Promote the piece to a king.
-        """
+
         self.king = True
 
-    def __str__(self):
-        """
-        Human-readable representation.
-        """
-        if self.king:
-            return f"{self.color} king"
-        
-        return self.color
 
-    def __repr__(self):
-        """
-        Developer-friendly representation.
-        """
-        return f"Piece(color='{self.color}', king={self.king})"
+    def is_king(self):
+
+        return self.king
+
+
+    def symbol(self):
+
+        if self.king:
+
+            if self.color == "red":
+                return "RK"
+
+            elif self.color == "white":
+                return "WK"
+
+
+        else:
+
+            if self.color == "red":
+                return "R"
+
+            elif self.color == "white":
+                return "W"
+
+
+    def __str__(self):
+
+        return self.symbol()

@@ -16,6 +16,7 @@ class BoardRenderer:
 
         # Create empty 8x8 board
         for row in range(8):
+
             current_row = []
 
             for column in range(8):
@@ -35,17 +36,14 @@ class BoardRenderer:
 
                 row, column = self.square_mapper.coordinates(square)
 
-                if piece.color == "red":
-                    display_board[row][column] = "R"
-
-                elif piece.color == "white":
-                    display_board[row][column] = "W"
+                # Let the Piece decide how it should appear
+                display_board[row][column] = piece.symbol()
 
 
         # Print board
         print()
 
         for row in display_board:
-            print(" ".join(row))
+            print(" ".join(f"{cell:>2}" for cell in row))
 
         print()
