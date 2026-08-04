@@ -1,23 +1,23 @@
+from src.domains.checkers.piece import Piece
+
+
 class Pieces:
 
     def __init__(self):
 
         self.position = {}
 
-        # Black pieces
-
+        # Black (Red in the renderer later)
         for square in range(1, 13):
-            self.position[square] = "B"
+            self.position[square] = Piece("red")
 
         # Empty playable squares
-
         for square in range(13, 21):
-            self.position[square] = "."
+            self.position[square] = None
 
-        # White pieces
-
+        # White
         for square in range(21, 33):
-            self.position[square] = "W"
+            self.position[square] = Piece("white")
 
     def piece_at(self, square):
 

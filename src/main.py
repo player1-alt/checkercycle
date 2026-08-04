@@ -1,12 +1,17 @@
+from src.renderer.board import Board
+from src.renderer.board_renderer import BoardRenderer
 from src.renderer.pieces import Pieces
 
 
 def main():
 
+    board = Board()
+
     pieces = Pieces()
 
-    for square in range(1, 33):
-        print(square, ":", pieces.piece_at(square))
+    renderer = BoardRenderer()
+
+    renderer.render(board, pieces)
 
 
 if __name__ == "__main__":
