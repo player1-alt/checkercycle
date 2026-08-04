@@ -53,7 +53,7 @@ Build Version 1 of the renderer using checkers as the proof of concept.
 
 ### Architecture
 
-* [ ] Design folder structure
+* [x] Design folder structure
 * [ ] Create renderer project
 * [ ] Create board module
 * [ ] Create piece module
