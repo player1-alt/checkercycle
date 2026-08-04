@@ -1,11 +1,21 @@
+from src.renderer.board_renderer import BoardRenderer
+
+
 class TextOutput:
+    """
+    Displays the current game state as a board.
+    """
+
+    def __init__(self):
+        self.board_renderer = BoardRenderer()
+
 
     def display(self, game_state):
 
-        print("Pieces")
-        print("------")
+        print("BOARD")
+        print("-----")
 
-        for square, piece in game_state.pieces.position.items():
-
-            if piece is not None:
-                print(f"{square:2}: {piece}")
+        self.board_renderer.render(
+            None,
+            game_state.pieces
+        )
