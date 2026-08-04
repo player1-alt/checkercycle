@@ -1,13 +1,14 @@
+from renderer.renderer import Renderer
+
+
 def main():
-    print("====================================")
-    print("      THE RENDERER v0.1")
-    print("====================================")
-    print("Status : Online")
-    print("Domain : Checkers")
-    print("Output : Ready")
-    print()
-    print("Welcome to The Renderer.")
+    renderer = Renderer()
+
+    renderer.render("11-15")
 
 
 if __name__ == "__main__":
     main()
+
+
+
