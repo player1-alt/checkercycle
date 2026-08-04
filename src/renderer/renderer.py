@@ -1,4 +1,4 @@
-from renderer.outputs.text_output import TextOutput
+from src.renderer.outputs.text_output import TextOutput
 
 
 class Renderer:

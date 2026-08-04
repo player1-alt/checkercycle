@@ -1,14 +1,16 @@
-from renderer.renderer import Renderer
+from src.renderer.renderer import Renderer
+from src.domains.checkers.move import Move
 
 
 def main():
     renderer = Renderer()
 
-    renderer.render("11-15")
+    move = Move(11, 15)
+
+    renderer.render(move.describe())
 
 
 if __name__ == "__main__":
     main()
-
 
 
