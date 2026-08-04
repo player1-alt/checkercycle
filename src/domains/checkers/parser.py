@@ -3,18 +3,48 @@ from .move import Move
 
 class CheckersParser:
     """
-    Converts checkers notation into Move objects.
+    Converts renderer instructions into Move objects.
     """
 
     def parse(self, notation):
+
         try:
-            parts = notation.split("-")
 
-            from_square = int(parts[0])
-            to_square = int(parts[1])
+            captured_squares = []
 
-            return Move(from_square, to_square)
+            # Separate movement and captures
+            if "|" in notation:
+
+                movement, captures = notation.split("|")
+
+                captured_squares = [
+                    int(square)
+                    for square in captures.split(",")
+                ]
+
+            else:
+
+                movement = notation
+
+
+            # Build path
+            separator = "-"
+
+            squares = movement.split(separator)
+
+            path = [
+                int(square)
+                for square in squares
+            ]
+
+
+            return Move(
+                path,
+                captured_squares=captured_squares
+            )
+
 
         except Exception:
-            print("Invalid checkers notation.")
+
+            print("Invalid renderer notation.")
             return None

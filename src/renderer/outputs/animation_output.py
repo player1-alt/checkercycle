@@ -27,7 +27,9 @@ class AnimationOutput:
             row = start_row + (end_row - start_row) * progress
             col = start_col + (end_col - start_col) * progress
 
-            frames.append((round(row, 2), round(col, 2)))
+            frames.append(
+                (round(row, 2), round(col, 2))
+            )
 
         return frames
 
@@ -36,20 +38,46 @@ class AnimationOutput:
 
         print("ANIMATION OUTPUT:")
         print("Animating piece:")
+        print()
 
-        start = self.square_mapper.coordinates(move.from_square)
-        end = self.square_mapper.coordinates(move.to_square)
-
-        print(f"Square {move.from_square} -> Square {move.to_square}")
-        print(f"Coordinates {start} -> {end}")
+        print(f"Path: {move.path}")
 
         print()
         print("Animation frames:")
 
-        frames = self.generate_frames(start, end)
+        # Animate each part of the path
+        for index in range(len(move.path) - 1):
 
-        for number, frame in enumerate(frames, start=1):
+            start_square = move.path[index]
+            end_square = move.path[index + 1]
 
-            print(f"Frame {number}: {frame}")
+            start = self.square_mapper.coordinates(
+                start_square
+            )
 
-        print()
+            end = self.square_mapper.coordinates(
+                end_square
+            )
+
+            print(
+                f"Jump {start_square} -> {end_square}"
+            )
+
+            print(
+                f"Coordinates {start} -> {end}"
+            )
+
+            frames = self.generate_frames(
+                start,
+                end
+            )
+
+            for number, frame in enumerate(
+                frames,
+                start=1
+            ):
+                print(
+                    f"Frame {number}: {frame}"
+                )
+
+            print()
