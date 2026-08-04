@@ -5,4 +5,5 @@ class AnimationOutput:
 
     def display(self, data):
         print("ANIMATION OUTPUT:")
-        print(data)
+        print(f"Animating piece:")
+        print(f"Square {data.from_square} -> Square {data.to_square}")

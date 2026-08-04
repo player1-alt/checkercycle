@@ -5,4 +5,6 @@ class AudioOutput:
 
     def display(self, data):
         print("AUDIO OUTPUT:")
-        print(data)
+        print("Preparing audio:")
+        print(f"Square {data.from_square}.mp3")
+        print(f"Square {data.to_square}.mp3")
