@@ -7,7 +7,7 @@ def main():
 
     move = Move(11, 15)
 
-    renderer.render(move.describe())
+    renderer.render(move)
 
 
 if __name__ == "__main__":

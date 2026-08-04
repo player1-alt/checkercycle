@@ -5,4 +5,4 @@ class TextOutput:
 
     def display(self, data):
         print("TEXT OUTPUT:")
-        print(data)
+        print(data.describe())
