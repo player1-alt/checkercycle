@@ -1,11 +1,13 @@
 from src.renderer.renderer import Renderer
-from src.domains.checkers.move import Move
+from src.domains.checkers.parser import CheckersParser
 
 
 def main():
     renderer = Renderer()
 
-    move = Move(11, 15)
+    parser = CheckersParser()
+
+    move = parser.parse("11-15")
 
     renderer.render(move)
 
