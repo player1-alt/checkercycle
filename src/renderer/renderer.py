@@ -12,15 +12,24 @@ class Renderer:
     def __init__(self):
 
         self.text_output = TextOutput()
+
         self.image_output = ImageOutput()
-        self.animation_output = AnimationOutput()
+
+        self.animation_output = AnimationOutput(
+            self.image_output
+        )
+
         self.audio_output = AudioOutput()
 
 
     def render(self, game_state, move):
 
         if game_state is None:
-            print("Cannot render invalid game state.")
+
+            print(
+                "Cannot render invalid game state."
+            )
+
             return
 
 
@@ -30,23 +39,34 @@ class Renderer:
         print()
 
 
-        # Text board display
-        self.text_output.display(game_state)
+        # Text board output
+        self.text_output.display(
+            game_state
+        )
+
 
         print()
 
 
-        # Save PNG frame
-        self.image_output.display(game_state)
+        # Save current board image
+        self.image_output.display(
+            game_state
+        )
+
 
         print()
 
 
-        # Animation output
-        self.animation_output.display(move)
+        # Generate animation frames
+        self.animation_output.display(
+            move
+        )
+
 
         print()
 
 
-        # Audio output
-        self.audio_output.display(move)
+        # Audio placeholder
+        self.audio_output.display(
+            move
+        )

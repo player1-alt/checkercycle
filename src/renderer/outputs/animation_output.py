@@ -6,14 +6,13 @@ class AnimationOutput:
     Converts renderer information into animation instructions.
     """
 
-    def __init__(self):
+    def __init__(self, image_output=None):
+
         self.square_mapper = SquareMapper()
+        self.image_output = image_output
 
 
     def generate_frames(self, start, end, steps=5):
-        """
-        Creates movement frames between two coordinates.
-        """
 
         start_row, start_col = start
         end_row, end_col = end
@@ -28,7 +27,10 @@ class AnimationOutput:
             col = start_col + (end_col - start_col) * progress
 
             frames.append(
-                (round(row, 2), round(col, 2))
+                (
+                    round(row, 2),
+                    round(col, 2)
+                )
             )
 
         return frames
@@ -45,11 +47,12 @@ class AnimationOutput:
         print()
         print("Animation frames:")
 
-        # Animate each part of the path
+
         for index in range(len(move.path) - 1):
 
             start_square = move.path[index]
             end_square = move.path[index + 1]
+
 
             start = self.square_mapper.coordinates(
                 start_square
@@ -59,12 +62,9 @@ class AnimationOutput:
                 end_square
             )
 
-            print(
-                f"Jump {start_square} -> {end_square}"
-            )
 
             print(
-                f"Coordinates {start} -> {end}"
+                f"Jump {start_square} -> {end_square}"
             )
 
             frames = self.generate_frames(
@@ -72,27 +72,24 @@ class AnimationOutput:
                 end
             )
 
+
             for number, frame in enumerate(
                 frames,
                 start=1
             ):
+
                 print(
                     f"Frame {number}: {frame}"
                 )
 
-            print()
 
+                # NEW:
+                # save animation image
+                if self.image_output:
 
-        # Capture events
-        if move.captured_squares:
+                    self.image_output.save_animation_frame(
+                        frame
+                    )
 
-            print("CAPTURE EVENTS:")
-            print()
-
-            for square in move.captured_squares:
-
-                print(
-                    f"Remove piece from square {square}"
-                )
 
             print()
