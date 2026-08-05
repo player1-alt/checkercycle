@@ -3,13 +3,15 @@ from src.domains.checkers.square_mapper import SquareMapper
 
 class AnimationOutput:
     """
-    Converts renderer information into animation instructions.
+    Creates animation frames for real checker pieces.
     """
+
 
     def __init__(self, image_output=None):
 
         self.square_mapper = SquareMapper()
         self.image_output = image_output
+
 
 
     def generate_frames(self, start, end, steps=5):
@@ -19,12 +21,21 @@ class AnimationOutput:
 
         frames = []
 
+
         for i in range(steps + 1):
 
             progress = i / steps
 
-            row = start_row + (end_row - start_row) * progress
-            col = start_col + (end_col - start_col) * progress
+
+            row = start_row + (
+                end_row - start_row
+            ) * progress
+
+
+            col = start_col + (
+                end_col - start_col
+            ) * progress
+
 
             frames.append(
                 (
@@ -33,10 +44,12 @@ class AnimationOutput:
                 )
             )
 
+
         return frames
 
 
-    def display(self, move):
+
+    def display(self, game_state, move):
 
         print("ANIMATION OUTPUT:")
         print("Animating piece:")
@@ -45,12 +58,14 @@ class AnimationOutput:
         print(f"Path: {move.path}")
 
         print()
-        print("Animation frames:")
 
 
-        for index in range(len(move.path) - 1):
+        for index in range(
+            len(move.path) - 1
+        ):
 
             start_square = move.path[index]
+
             end_square = move.path[index + 1]
 
 
@@ -58,14 +73,16 @@ class AnimationOutput:
                 start_square
             )
 
+
             end = self.square_mapper.coordinates(
                 end_square
             )
 
 
             print(
-                f"Jump {start_square} -> {end_square}"
+                f"Moving {start_square} -> {end_square}"
             )
+
 
             frames = self.generate_frames(
                 start,
@@ -83,13 +100,24 @@ class AnimationOutput:
                 )
 
 
-                # NEW:
-                # save animation image
                 if self.image_output:
 
                     self.image_output.save_animation_frame(
+                        game_state,
+                        start_square,
                         frame
                     )
 
 
             print()
+
+
+        if move.captured_squares:
+
+            print("CAPTURE EVENTS:")
+
+            for square in move.captured_squares:
+
+                print(
+                    f"Remove piece from {square}"
+                )

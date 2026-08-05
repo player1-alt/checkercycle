@@ -4,12 +4,15 @@ from src.domains.checkers.square_mapper import SquareMapper
 
 class ImageOutput:
     """
-    Saves board images and animation frames.
+    Creates board images and animation frames.
     """
 
+
     def __init__(self):
+
         self.frame_counter = 1
         self.square_mapper = SquareMapper()
+
 
 
     def draw_board(self, draw):
@@ -17,8 +20,9 @@ class ImageOutput:
         size = 640
         square_size = size // 8
 
-        # Draw checkerboard
+
         for row in range(8):
+
             for column in range(8):
 
                 if (row + column) % 2 == 1:
@@ -30,8 +34,9 @@ class ImageOutput:
                             (column + 1) * square_size,
                             (row + 1) * square_size
                         ],
-                        fill=(80, 80, 80)
+                        fill=(80,80,80)
                     )
+
 
 
     def draw_piece(
@@ -45,40 +50,46 @@ class ImageOutput:
         size = 640
         square_size = size // 8
 
+
         center_x = (
             column * square_size
             + square_size // 2
         )
+
 
         center_y = (
             row * square_size
             + square_size // 2
         )
 
+
         radius = square_size // 3
 
 
         draw.ellipse(
             [
-                center_x - radius,
-                center_y - radius,
-                center_x + radius,
-                center_y + radius
+                center_x-radius,
+                center_y-radius,
+                center_x+radius,
+                center_y+radius
             ],
             fill=colour,
             outline="black"
         )
 
 
+
     def display(self, game_state):
 
         size = 640
 
+
         image = Image.new(
             "RGB",
-            (size, size),
+            (size,size),
             "white"
         )
+
 
         draw = ImageDraw.Draw(image)
 
@@ -86,20 +97,21 @@ class ImageOutput:
         self.draw_board(draw)
 
 
-        # Draw existing pieces
         for square, piece in game_state.pieces.position.items():
 
-            if piece is not None:
+            if piece:
+
 
                 row, column = self.square_mapper.coordinates(
                     square
                 )
 
 
-                if piece.color == "red":
-                    colour = "red"
-                else:
-                    colour = "white"
+                colour = (
+                    "red"
+                    if piece.color == "red"
+                    else "white"
+                )
 
 
                 self.draw_piece(
@@ -110,30 +122,40 @@ class ImageOutput:
                 )
 
 
+
         filename = f"frame{self.frame_counter:04}.png"
 
+
         image.save(filename)
+
 
         print(
             f"IMAGE OUTPUT: Saved {filename}"
         )
 
+
         self.frame_counter += 1
+
 
 
 
     def save_animation_frame(
         self,
+        game_state,
+        moving_square,
         position
     ):
 
+
         size = 640
+
 
         image = Image.new(
             "RGB",
-            (size, size),
+            (size,size),
             "white"
         )
+
 
         draw = ImageDraw.Draw(image)
 
@@ -141,15 +163,69 @@ class ImageOutput:
         self.draw_board(draw)
 
 
-        row, column = position
+
+        # draw all pieces except moving piece
+
+        moving_piece = None
 
 
-        self.draw_piece(
-            draw,
-            row,
-            column,
-            "red"
-        )
+        for square, piece in game_state.pieces.position.items():
+
+
+            if square == moving_square:
+
+                moving_piece = piece
+
+                continue
+
+
+
+            if piece:
+
+
+                row, column = self.square_mapper.coordinates(
+                    square
+                )
+
+
+                colour = (
+                    "red"
+                    if piece.color == "red"
+                    else "white"
+                )
+
+
+                self.draw_piece(
+                    draw,
+                    row,
+                    column,
+                    colour
+                )
+
+
+
+        # draw moving piece at animation position
+
+        if moving_piece:
+
+
+            row, column = position
+
+
+            colour = (
+                "red"
+                if moving_piece.color == "red"
+                else "white"
+            )
+
+
+            self.draw_piece(
+                draw,
+                row,
+                column,
+                colour
+            )
+
 
 
         filename = (
@@ -159,8 +235,10 @@ class ImageOutput:
 
         image.save(filename)
 
+
         print(
             f"Saved animation frame {filename}"
         )
+
 
         self.frame_counter += 1
