@@ -19,6 +19,7 @@ class MoveEvent:
         hold_time
     ):
 
+        # Original move object
         self.move = move
 
         # Starting square
@@ -27,13 +28,13 @@ class MoveEvent:
         # Ending square
         self.end_square = end_square
 
-        # Captured pieces
+        # Pieces removed during capture
         self.captured_squares = captured_squares
 
-        # Movement duration
+        # Time used for piece movement animation
         self.duration = duration
 
-        # Pause before next action
+        # Time used for studying the new position
         self.hold_time = hold_time
 
 
@@ -66,5 +67,5 @@ class MoveEvent:
         )
 
         print(
-            f"Hold time: {self.hold_time}s"
+            f"Study hold: {self.hold_time}s"
         )

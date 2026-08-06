@@ -7,9 +7,12 @@ class VideoOutput:
     """
     Creates an MP4 from saved PNG frames.
 
-    Timing is controlled by config/settings.json:
-    - board position holds
-    - final position hold
+    Timing controlled by MoveEvents.
+
+    Uses:
+    - animation duration
+    - position hold time
+    - final hold config
     """
 
 
@@ -20,7 +23,11 @@ class VideoOutput:
 
 
 
-    def create_video(self, frames):
+    def create_video(
+        self,
+        frames,
+        events=None
+    ):
 
         if not frames:
 
@@ -33,6 +40,7 @@ class VideoOutput:
         print("Frames going into video:")
 
         for frame in frames:
+
             print(frame)
 
         print()
@@ -49,22 +57,30 @@ class VideoOutput:
 
 
         video = cv2.VideoWriter(
+
             self.output_name,
+
             cv2.VideoWriter_fourcc(*"mp4v"),
+
             self.fps,
+
             (width, height)
+
         )
 
 
 
         for frame in frames:
 
+
             image = cv2.imread(
                 frame
             )
 
 
-            # Moving pieces
+
+            # Animation frames
+
             if frame.startswith("animation"):
 
                 video.write(image)
@@ -72,30 +88,43 @@ class VideoOutput:
 
 
             # Board positions
-            # Hold so learner can study position
+
             elif frame.startswith("frame"):
 
-                print(
-                    f"Holding board position: {frame}"
+
+                hold_seconds = 5
+
+
+                if events:
+
+                    hold_seconds = events[0].hold_time
+
+
+
+                hold_frames = int(
+                    self.fps * hold_seconds
                 )
 
 
-                for _ in range(
-                    SETTINGS["video"]["position_hold_frames"]
-                ):
+                print(
+                    f"Holding board position: {frame} for {hold_seconds}s"
+                )
+
+
+                for _ in range(hold_frames):
 
                     video.write(image)
 
 
 
-        # Final position extra hold
+        # Final position hold
 
         final_image = cv2.imread(
             frames[-1]
         )
 
 
-        final_hold = SETTINGS["video"]["final_hold"]
+        final_hold = SETTINGS["final_hold"]
 
 
         print()
@@ -105,12 +134,12 @@ class VideoOutput:
         )
 
 
-
         for i in range(
             self.fps * final_hold
         ):
 
             video.write(final_image)
+
 
             print(
                 f"Final hold {i+1}/{self.fps * final_hold}"
@@ -119,7 +148,6 @@ class VideoOutput:
 
 
         video.release()
-
 
 
         print()

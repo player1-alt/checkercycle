@@ -22,6 +22,9 @@ class VariationPlayer:
         self.renderer = renderer
         self.timeline = Timeline()
 
+        # Stores all MoveEvents for video timing
+        self.events = []
+
 
 
     def play(self, variation):
@@ -30,15 +33,19 @@ class VariationPlayer:
         print()
 
 
+
         # Starting board position
+
         self.renderer.render_position(
             self.game_state
         )
 
 
+
         total_moves = len(
             variation.moves
         )
+
 
 
         print("Initial position hold...")
@@ -53,7 +60,8 @@ class VariationPlayer:
         ):
 
 
-            # Calculate position study time
+
+            # Time before move
 
             hold = self.timeline.hold_time(
                 index,
@@ -70,7 +78,7 @@ class VariationPlayer:
 
 
 
-            # Calculate move duration
+            # Movement duration
 
             duration = self.timeline.wait_time(
                 index,
@@ -80,7 +88,6 @@ class VariationPlayer:
 
 
             # Create MoveEvent
-            # This now carries ALL timing information
 
             event = MoveEvent(
 
@@ -99,6 +106,14 @@ class VariationPlayer:
             )
 
 
+            # Save event for video
+
+            self.events.append(
+                event
+            )
+
+
+
             event.describe()
 
             print()
@@ -114,7 +129,7 @@ class VariationPlayer:
 
 
 
-            # Apply move to board
+            # Apply move
 
             self.game_state.apply_move(
                 move
@@ -122,11 +137,12 @@ class VariationPlayer:
 
 
 
-            # Render new position
+            # Render resulting position
 
             self.renderer.render_position(
                 self.game_state
             )
+
 
 
             print(
@@ -144,6 +160,9 @@ class VariationPlayer:
 
 
 
+        # Send frames + timing events to video
+
         self.renderer.video_output.create_video(
-            self.renderer.image_output.saved_frames
+            self.renderer.image_output.saved_frames,
+            self.events
         )
