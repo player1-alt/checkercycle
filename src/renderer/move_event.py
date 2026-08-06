@@ -1,112 +1,60 @@
-from src.renderer.move_event import MoveEvent
-from src.renderer.timeline import Timeline
-
-import time
-
-
-class VariationPlayer:
+class MoveEvent:
     """
-    Plays a checkers variation move by move.
-    Creates MoveEvents for all outputs.
+    Represents everything that happens during one checker move.
+
+    This becomes the common language between:
+    - Video
+    - Audio
+    - Timing
+    - Animation
     """
 
-    def __init__(self, game_state, renderer):
+    def __init__(
+        self,
+        move,
+        start_square,
+        end_square,
+        captured_squares,
+        duration
+    ):
 
-        self.game_state = game_state
-        self.renderer = renderer
-        self.timeline = Timeline()
+        self.move = move
+
+        # Where the piece starts
+        self.start_square = start_square
+
+        # Where the piece lands
+        self.end_square = end_square
+
+        # Any pieces removed during capture
+        self.captured_squares = captured_squares
+
+        # How long this event lasts
+        self.duration = duration
 
 
 
-    def play(self, variation):
+    def describe(self):
 
-        print(f"Playing: {variation.name}")
-        print()
+        print("MOVE EVENT")
+        print("----------------")
 
-
-        self.renderer.render_position(
-            self.game_state
+        print(
+            f"Move: {self.start_square}-{self.end_square}"
         )
 
-
-        total_moves = len(
-            variation.moves
-        )
-
-
-        print("Initial position hold...")
-        time.sleep(3)
-
-
-
-        for index, move in enumerate(
-            variation.moves,
-            start=1
-        ):
-
-
-            hold = self.timeline.hold_time(
-                index,
-                total_moves
-            )
-
+        if self.captured_squares:
 
             print(
-                f"Position hold: {hold}s"
+                f"Captured: {self.captured_squares}"
             )
 
-            time.sleep(hold)
+        else:
 
-
-
-            start_square = move.path[0]
-
-            end_square = move.path[-1]
-
-
-            duration = self.timeline.wait_time(
-                index,
-                total_moves
+            print(
+                "No capture"
             )
 
-
-            event = MoveEvent(
-                move,
-                start_square,
-                end_square,
-                move.captured_squares,
-                duration
-            )
-
-
-            event.describe()
-
-
-            # VIDEO + ANIMATION
-            self.renderer.animate(
-                self.game_state,
-                move
-            )
-
-
-            # GAME STATE UPDATE
-            self.game_state.apply_move(
-                move
-            )
-
-
-            # NEW BOARD
-            self.renderer.render_position(
-                self.game_state
-            )
-
-
-            time.sleep(duration)
-
-
-
-        print("Variation complete.")
-
-        self.renderer.video_output.create_video(
-            self.renderer.image_output.saved_frames
+        print(
+            f"Duration: {self.duration}s"
         )

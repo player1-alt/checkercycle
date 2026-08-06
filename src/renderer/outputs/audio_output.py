@@ -6,6 +6,12 @@ class AudioOutput:
     Converts MoveEvent information into audio instructions.
 
     Later this will control real MP3 playback.
+
+    Receives:
+    - start square
+    - end square
+    - timing
+    - captures
     """
 
 
@@ -20,13 +26,13 @@ class AudioOutput:
         print("AUDIO OUTPUT:")
         print("Preparing audio:")
 
-
-        # Full movement path
-        path = event.move.path
+        move = event.move
 
 
+        for index, square in enumerate(
+            move.path
+        ):
 
-        for index, square in enumerate(path):
 
             print(
                 f"Playing Square {square}.mp3"
@@ -35,11 +41,12 @@ class AudioOutput:
 
             # Pause between squares
 
-            if index < len(path) - 1:
+            if index < len(move.path) - 1:
+
 
                 hold = self.timeline.hold_time(
                     index + 1,
-                    len(path)
+                    len(move.path)
                 )
 
 
@@ -49,20 +56,20 @@ class AudioOutput:
 
 
 
-        # Capture information
+        # Capture sound placeholder
 
         if event.captured_squares:
 
-            print()
+            print(
+                "Capture audio:"
+            )
 
-            print("Capture audio:")
 
             for square in event.captured_squares:
 
                 print(
-                    f"Captured Square {square}.mp3"
+                    f"Capture Square {square}.mp3"
                 )
-
 
 
         print()

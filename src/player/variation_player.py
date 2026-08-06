@@ -7,7 +7,13 @@ from src.renderer.move_event import MoveEvent
 class VariationPlayer:
     """
     Plays a checkers variation move by move.
-    Controls replay timing.
+
+    MoveEvent is the communication layer
+    between:
+    - Animation
+    - Audio
+    - Timing
+    - Video
     """
 
 
@@ -36,7 +42,6 @@ class VariationPlayer:
         )
 
 
-        # Initial board recognition hold
         print("Initial position hold...")
 
         time.sleep(3)
@@ -49,39 +54,22 @@ class VariationPlayer:
         ):
 
 
-            # HOLD BEFORE MOVE
+            # Hold before move
 
-            hold_time = self.timeline.hold_time(
+            hold = self.timeline.hold_time(
                 index,
                 total_moves
             )
 
             print(
-                f"Position hold: {hold_time}s"
+                f"Position hold: {hold}s"
             )
 
-            time.sleep(
-                hold_time
-            )
+            time.sleep(hold)
 
 
 
-            print(
-                f"Applying move {index}/{total_moves}: {move}"
-            )
-
-
-
-            # Animate move
-
-            self.renderer.animate(
-                self.game_state,
-                move
-            )
-
-
-
-            # Calculate timing
+            # Calculate duration
 
             duration = self.timeline.wait_time(
                 index,
@@ -89,8 +77,7 @@ class VariationPlayer:
             )
 
 
-
-            # Create MoveEvent
+            # Create event FIRST
 
             event = MoveEvent(
 
@@ -107,15 +94,22 @@ class VariationPlayer:
             )
 
 
-            print()
-
             event.describe()
 
             print()
 
 
 
-            # Apply move
+            # Animate using event
+
+            self.renderer.animate(
+                self.game_state,
+                event
+            )
+
+
+
+            # Apply actual game move
 
             self.game_state.apply_move(
                 move
@@ -123,30 +117,24 @@ class VariationPlayer:
 
 
 
-            # Show new position
+            # Render new board
 
             self.renderer.render_position(
                 self.game_state
             )
 
 
-
-            # HOLD AFTER MOVE
-
             print(
                 f"Move duration: {duration}s"
             )
 
-            time.sleep(
-                duration
-            )
+            time.sleep(duration)
 
 
 
         print("Variation complete.")
 
         print("Creating video...")
-
 
 
         self.renderer.video_output.create_video(

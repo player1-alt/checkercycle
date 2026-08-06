@@ -4,6 +4,9 @@ from src.domains.checkers.square_mapper import SquareMapper
 class AnimationOutput:
     """
     Creates animation frames for real checker pieces.
+
+    Receives MoveEvent so animation,
+    audio, and video share the same move data.
     """
 
 
@@ -49,13 +52,21 @@ class AnimationOutput:
 
 
 
-    def display(self, game_state, move):
+    def display(self, game_state, event):
 
         print("ANIMATION OUTPUT:")
         print("Animating piece:")
         print()
 
-        print(f"Path: {move.path}")
+
+        # Extract the original move from the event
+
+        move = event.move
+
+
+        print(
+            f"Path: {move.path}"
+        )
 
         print()
 
@@ -63,6 +74,7 @@ class AnimationOutput:
         for index in range(
             len(move.path) - 1
         ):
+
 
             start_square = move.path[index]
 
@@ -112,11 +124,15 @@ class AnimationOutput:
             print()
 
 
-        if move.captured_squares:
+
+        # Capture information comes from MoveEvent
+
+        if event.captured_squares:
 
             print("CAPTURE EVENTS:")
 
-            for square in move.captured_squares:
+
+            for square in event.captured_squares:
 
                 print(
                     f"Remove piece from {square}"

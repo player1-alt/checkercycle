@@ -8,6 +8,11 @@ from src.renderer.outputs.video_output import VideoOutput
 class Renderer:
     """
     Controls all rendering outputs.
+
+    Receives MoveEvents and sends them to:
+    - Animation
+    - Audio
+    - Video
     """
 
 
@@ -17,14 +22,11 @@ class Renderer:
 
         self.text_output = TextOutput()
 
-
         self.animation_output = AnimationOutput(
             self.image_output
         )
 
-
         self.audio_output = AudioOutput()
-
 
         self.video_output = VideoOutput()
 
@@ -33,7 +35,6 @@ class Renderer:
     def render_position(self, game_state):
 
         if game_state is None:
-
             return
 
 
@@ -59,10 +60,9 @@ class Renderer:
 
 
 
-    def animate(self, game_state, move):
+    def animate(self, game_state, event):
 
         if game_state is None:
-
             return
 
 
@@ -70,10 +70,17 @@ class Renderer:
         print()
 
 
+        # Send MoveEvent
+
         self.animation_output.display(
             game_state,
-            move
+            event
         )
 
 
         print()
+
+
+        self.audio_output.display(
+            event
+        )
