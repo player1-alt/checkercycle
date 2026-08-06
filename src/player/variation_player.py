@@ -2,14 +2,13 @@ import time
 
 from src.renderer.timeline import Timeline
 from src.renderer.move_event import MoveEvent
-from src.renderer.settings import SETTINGS
+
 
 class VariationPlayer:
     """
     Plays a checkers variation move by move.
 
-    MoveEvent is the communication layer
-    between:
+    MoveEvent is the communication layer between:
     - Animation
     - Audio
     - Timing
@@ -31,7 +30,7 @@ class VariationPlayer:
         print()
 
 
-        # Starting position
+        # Starting board position
         self.renderer.render_position(
             self.game_state
         )
@@ -44,10 +43,7 @@ class VariationPlayer:
 
         print("Initial position hold...")
 
-        time.sleep(
-            SETTINGS["initial_hold"]
-)
-
+        time.sleep(3)
 
 
 
@@ -57,22 +53,24 @@ class VariationPlayer:
         ):
 
 
-            # Hold before move
+            # Calculate position study time
 
             hold = self.timeline.hold_time(
                 index,
                 total_moves
             )
 
+
             print(
                 f"Position hold: {hold}s"
             )
+
 
             time.sleep(hold)
 
 
 
-            # Calculate duration
+            # Calculate move duration
 
             duration = self.timeline.wait_time(
                 index,
@@ -80,7 +78,9 @@ class VariationPlayer:
             )
 
 
-            # Create event FIRST
+
+            # Create MoveEvent
+            # This now carries ALL timing information
 
             event = MoveEvent(
 
@@ -92,7 +92,9 @@ class VariationPlayer:
 
                 move.captured_squares,
 
-                duration
+                duration,
+
+                hold
 
             )
 
@@ -103,7 +105,7 @@ class VariationPlayer:
 
 
 
-            # Animate using event
+            # Animation + Audio
 
             self.renderer.animate(
                 self.game_state,
@@ -112,7 +114,7 @@ class VariationPlayer:
 
 
 
-            # Apply actual game move
+            # Apply move to board
 
             self.game_state.apply_move(
                 move
@@ -120,7 +122,7 @@ class VariationPlayer:
 
 
 
-            # Render new board
+            # Render new position
 
             self.renderer.render_position(
                 self.game_state
@@ -131,6 +133,7 @@ class VariationPlayer:
                 f"Move duration: {duration}s"
             )
 
+
             time.sleep(duration)
 
 
@@ -138,6 +141,7 @@ class VariationPlayer:
         print("Variation complete.")
 
         print("Creating video...")
+
 
 
         self.renderer.video_output.create_video(

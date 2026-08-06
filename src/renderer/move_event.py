@@ -2,11 +2,11 @@ class MoveEvent:
     """
     Represents everything that happens during one checker move.
 
-    This becomes the common language between:
-    - Video
+    Communication layer between:
+    - Animation
     - Audio
     - Timing
-    - Animation
+    - Video
     """
 
     def __init__(
@@ -15,22 +15,26 @@ class MoveEvent:
         start_square,
         end_square,
         captured_squares,
-        duration
+        duration,
+        hold_time
     ):
 
         self.move = move
 
-        # Where the piece starts
+        # Starting square
         self.start_square = start_square
 
-        # Where the piece lands
+        # Ending square
         self.end_square = end_square
 
-        # Any pieces removed during capture
+        # Captured pieces
         self.captured_squares = captured_squares
 
-        # How long this event lasts
+        # Movement duration
         self.duration = duration
+
+        # Pause before next action
+        self.hold_time = hold_time
 
 
 
@@ -42,6 +46,7 @@ class MoveEvent:
         print(
             f"Move: {self.start_square}-{self.end_square}"
         )
+
 
         if self.captured_squares:
 
@@ -55,6 +60,11 @@ class MoveEvent:
                 "No capture"
             )
 
+
         print(
-            f"Duration: {self.duration}s"
+            f"Move duration: {self.duration}s"
+        )
+
+        print(
+            f"Hold time: {self.hold_time}s"
         )

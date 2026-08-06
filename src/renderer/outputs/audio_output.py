@@ -1,7 +1,6 @@
 from src.renderer.timeline import Timeline
 from src.renderer.audio.audio_player import AudioPlayer
 from src.renderer.audio.audio_map import AUDIO_MAP
-from src.renderer.settings import SETTINGS
 
 
 class AudioOutput:
@@ -15,7 +14,7 @@ class AudioOutput:
 
     Uses:
     - audio_map.json for square -> song assignment
-    - settings.json for timing
+    - MoveEvent timing for synchronization
     """
 
 
@@ -31,12 +30,13 @@ class AudioOutput:
         print("AUDIO OUTPUT:")
         print("Preparing audio:")
 
+
         move = event.move
 
         files = []
 
 
-        # Build audio sequence from move path
+        # Convert squares into audio files
 
         for square in move.path:
 
@@ -59,13 +59,19 @@ class AudioOutput:
 
 
 
-        # Play move audio
+        # Play audio using the same timing
+        # as animation and video
 
         if files:
 
             self.player.play_sequence(
+
                 files,
-                pause=SETTINGS["audio"]["move_hold"]
+
+                move_time=event.duration,
+
+                hold_time=event.hold_time
+
             )
 
 
