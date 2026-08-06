@@ -9,54 +9,55 @@ class VariationPlayer:
     Updates the game state and controls replay timing.
     """
 
-
     def __init__(self, game_state, renderer):
 
         self.game_state = game_state
         self.renderer = renderer
         self.timeline = Timeline()
 
-
-
     def play(self, variation):
 
         print(f"Playing: {variation.name}")
         print()
 
+        # Show starting position
+        self.renderer.render_position(
+            self.game_state
+        )
 
-        total_moves = len(variation.moves)
-
-
+        total_moves = len(
+            variation.moves
+        )
 
         for index, move in enumerate(
             variation.moves,
             start=1
         ):
 
-
             print(
                 f"Applying move {index}/{total_moves}: {move}"
             )
 
-
-            # Update board position
-            self.game_state.apply_move(
-                move
-            )
-
-
-            # Render board + animation frames
-            self.renderer.render(
+            # Animate from the current position
+            self.renderer.animate(
                 self.game_state,
                 move
             )
 
+            # Apply the move
+            self.game_state.apply_move(
+                move
+            )
+
+            # Show the new position
+            self.renderer.render_position(
+                self.game_state
+            )
 
             duration = self.timeline.wait_time(
                 index,
                 total_moves
             )
-
 
             print(
                 f"Move duration: {duration}s"
@@ -64,14 +65,11 @@ class VariationPlayer:
 
             print()
 
-
             time.sleep(duration)
 
-
-
-        # GAME FINISHED
         print("Variation complete.")
         print("Creating video...")
 
-
-        self.renderer.video_output.create_video()
+        self.renderer.video_output.create_video(
+            self.renderer.image_output.saved_frames
+        )

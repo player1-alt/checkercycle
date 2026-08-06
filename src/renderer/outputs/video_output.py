@@ -1,43 +1,38 @@
 import cv2
-import os
 
 
 class VideoOutput:
     """
-    Converts PNG animation frames into MP4 video.
+    Creates an MP4 from saved PNG frames.
     """
 
     def __init__(self):
-        self.frame_folder = "."
+
         self.output_name = "CheckerCycle.mp4"
 
 
-    def create_video(self):
-
-        frames = []
-
-
-        for file in sorted(
-            os.listdir(self.frame_folder)
-        ):
-
-            if file.startswith("animation") and file.endswith(".png"):
-
-                frames.append(file)
-
+    def create_video(self, frames):
 
         if not frames:
 
-            print("No animation frames found.")
+            print("No frames found.")
             return
+
+
+        print()
+        print("Frames going into video:")
+
+        for frame in frames:
+            print(frame)
+
+        print()
 
 
         first_frame = cv2.imread(
             frames[0]
         )
 
-
-        height, width, layers = first_frame.shape
+        height, width, _ = first_frame.shape
 
 
         video = cv2.VideoWriter(
@@ -53,6 +48,30 @@ class VideoOutput:
             image = cv2.imread(frame)
 
             video.write(image)
+
+
+        # Hold the final board position
+        final_image = cv2.imread(
+            frames[-1]
+        )
+
+
+        final_hold_seconds = 5
+        fps = 2
+
+        hold_frames = final_hold_seconds * fps
+
+
+        print(
+            f"Holding final position for {final_hold_seconds} seconds"
+        )
+
+
+        for _ in range(hold_frames):
+
+            video.write(
+                final_image
+            )
 
 
         video.release()

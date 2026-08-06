@@ -7,11 +7,13 @@ class ImageOutput:
     Creates board images and animation frames.
     """
 
-
     def __init__(self):
 
         self.frame_counter = 1
         self.square_mapper = SquareMapper()
+
+        # Stores every saved frame in creation order
+        self.saved_frames = []
 
 
 
@@ -19,7 +21,6 @@ class ImageOutput:
 
         size = 640
         square_size = size // 8
-
 
         for row in range(8):
 
@@ -34,7 +35,7 @@ class ImageOutput:
                             (column + 1) * square_size,
                             (row + 1) * square_size
                         ],
-                        fill=(80,80,80)
+                        fill=(80, 80, 80)
                     )
 
 
@@ -50,28 +51,24 @@ class ImageOutput:
         size = 640
         square_size = size // 8
 
-
         center_x = (
             column * square_size
             + square_size // 2
         )
-
 
         center_y = (
             row * square_size
             + square_size // 2
         )
 
-
         radius = square_size // 3
-
 
         draw.ellipse(
             [
-                center_x-radius,
-                center_y-radius,
-                center_x+radius,
-                center_y+radius
+                center_x - radius,
+                center_y - radius,
+                center_x + radius,
+                center_y + radius
             ],
             fill=colour,
             outline="black"
@@ -83,36 +80,29 @@ class ImageOutput:
 
         size = 640
 
-
         image = Image.new(
             "RGB",
-            (size,size),
+            (size, size),
             "white"
         )
 
-
         draw = ImageDraw.Draw(image)
 
-
         self.draw_board(draw)
-
 
         for square, piece in game_state.pieces.position.items():
 
             if piece:
 
-
                 row, column = self.square_mapper.coordinates(
                     square
                 )
-
 
                 colour = (
                     "red"
                     if piece.color == "red"
                     else "white"
                 )
-
 
                 self.draw_piece(
                     draw,
@@ -121,21 +111,19 @@ class ImageOutput:
                     colour
                 )
 
-
-
         filename = f"frame{self.frame_counter:04}.png"
-
 
         image.save(filename)
 
+        self.saved_frames.append(
+            filename
+        )
 
         print(
             f"IMAGE OUTPUT: Saved {filename}"
         )
 
-
         self.frame_counter += 1
-
 
 
 
@@ -146,54 +134,38 @@ class ImageOutput:
         position
     ):
 
-
         size = 640
-
 
         image = Image.new(
             "RGB",
-            (size,size),
+            (size, size),
             "white"
         )
 
-
         draw = ImageDraw.Draw(image)
-
 
         self.draw_board(draw)
 
-
-
-        # draw all pieces except moving piece
-
         moving_piece = None
 
-
         for square, piece in game_state.pieces.position.items():
-
 
             if square == moving_square:
 
                 moving_piece = piece
-
                 continue
 
-
-
             if piece:
-
 
                 row, column = self.square_mapper.coordinates(
                     square
                 )
-
 
                 colour = (
                     "red"
                     if piece.color == "red"
                     else "white"
                 )
-
 
                 self.draw_piece(
                     draw,
@@ -202,22 +174,15 @@ class ImageOutput:
                     colour
                 )
 
-
-
-        # draw moving piece at animation position
-
         if moving_piece:
 
-
             row, column = position
-
 
             colour = (
                 "red"
                 if moving_piece.color == "red"
                 else "white"
             )
-
 
             self.draw_piece(
                 draw,
@@ -226,19 +191,18 @@ class ImageOutput:
                 colour
             )
 
-
-
         filename = (
             f"animation{self.frame_counter:04}.png"
         )
 
-
         image.save(filename)
 
+        self.saved_frames.append(
+            filename
+        )
 
         print(
             f"Saved animation frame {filename}"
         )
-
 
         self.frame_counter += 1

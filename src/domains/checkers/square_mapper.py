@@ -13,5 +13,13 @@ class SquareMapper:
             29:(7,0), 30:(7,2), 31:(7,4), 32:(7,6),
         }
 
+        self.reverse_mapping = {
+            coordinates: square
+            for square, coordinates in self.mapping.items()
+        }
+
     def coordinates(self, square):
         return self.mapping[square]
+
+    def square(self, row, column):
+        return self.reverse_mapping[(row, column)]
