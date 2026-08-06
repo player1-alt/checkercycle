@@ -1,6 +1,6 @@
 class Piece:
     """
-    Represents a checkers piece.
+    Represents a checker piece.
     """
 
     def __init__(self, color, king=False):
@@ -14,20 +14,15 @@ class Piece:
         self.king = True
 
 
-    def is_king(self):
-
-        return self.king
-
-
     def symbol(self):
 
         if self.king:
 
             if self.color == "red":
-                return "RK"
+                return "R♛"
 
-            elif self.color == "white":
-                return "WK"
+            else:
+                return "W♛"
 
 
         else:
@@ -35,10 +30,5 @@ class Piece:
             if self.color == "red":
                 return "R"
 
-            elif self.color == "white":
+            else:
                 return "W"
-
-
-    def __str__(self):
-
-        return self.symbol()
