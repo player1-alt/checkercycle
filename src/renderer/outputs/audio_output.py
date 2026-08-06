@@ -65,7 +65,7 @@ class AudioOutput:
 
             self.player.play_sequence(
                 files,
-                pause=SETTINGS["move_hold"]
+                pause=SETTINGS["audio"]["move_hold"]
             )
 
 

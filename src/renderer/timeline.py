@@ -1,10 +1,18 @@
+from src.renderer.settings import SETTINGS
+
+
 class Timeline:
     """
     Controls timing for replay, animation, and audio.
     """
 
-    def __init__(self, base_interval=2):
-        self.base_interval = base_interval
+
+    def __init__(self):
+
+        self.base_interval = SETTINGS["timeline"]["base_interval"]
+        self.start_hold = SETTINGS["timeline"]["start_hold"]
+        self.hold_increase = SETTINGS["timeline"]["hold_increase"]
+
 
 
     def move_duration(self, move_number, total_moves):
@@ -25,9 +33,6 @@ class Timeline:
     def wait_time(self, move_number, total_moves):
         """
         Returns pause duration after a move.
-
-        This is the thinking/memory time
-        after the board changes.
         """
 
         return self.move_duration(
@@ -41,20 +46,13 @@ class Timeline:
         """
         Returns pause duration before a move.
 
-        Allows the learner to recognize
-        the current board position before
-        the next move happens.
-
-        Later this can become:
-        - beginner mode
-        - master mode
-        - blind mode
-        - tournament mode
+        Gets longer as the variation progresses.
         """
 
         progress = move_number / max(total_moves, 1)
 
-        # Starts at 3 seconds and slowly increases
-        hold = 3 + (progress * 2)
+        hold = self.start_hold + (
+            progress * self.hold_increase
+        )
 
         return round(hold, 2)
