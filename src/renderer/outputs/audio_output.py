@@ -1,24 +1,14 @@
 from src.renderer.timeline import Timeline
+from src.renderer.audio.audio_player import AudioPlayer
+from src.renderer.audio.audio_map import AUDIO_MAP
 
 
 class AudioOutput:
-    """
-    Converts MoveEvent information into audio instructions.
-
-    Later this will control real MP3 playback.
-
-    Receives:
-    - start square
-    - end square
-    - timing
-    - captures
-    """
-
 
     def __init__(self):
 
         self.timeline = Timeline()
-
+        self.player = AudioPlayer()
 
 
     def display(self, event):
@@ -28,48 +18,43 @@ class AudioOutput:
 
         move = event.move
 
+        files = []
 
-        for index, square in enumerate(
-            move.path
-        ):
-
+        for square in move.path:
 
             print(
-                f"Playing Square {square}.mp3"
+                f"Square {square}"
             )
 
+            if square in AUDIO_MAP:
 
-            # Pause between squares
-
-            if index < len(move.path) - 1:
-
-
-                hold = self.timeline.hold_time(
-                    index + 1,
-                    len(move.path)
+                files.append(
+                    f"assets/audio/{AUDIO_MAP[square]}"
                 )
 
+            else:
 
                 print(
-                    f"Hold {hold}s"
+                    f"No audio assigned to square {square}"
                 )
 
 
+        if files:
 
-        # Capture sound placeholder
+            self.player.play_sequence(
+                files,
+                pause=2
+            )
+
 
         if event.captured_squares:
 
-            print(
-                "Capture audio:"
-            )
-
+            print("Capture audio:")
 
             for square in event.captured_squares:
 
                 print(
-                    f"Capture Square {square}.mp3"
+                    f"Capture Square {square}"
                 )
-
 
         print()
