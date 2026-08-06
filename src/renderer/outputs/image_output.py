@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from src.domains.checkers.square_mapper import SquareMapper
 
 
@@ -7,6 +7,7 @@ class ImageOutput:
     Creates board images and animation frames.
     """
 
+
     def __init__(self):
 
         self.frame_counter = 1
@@ -14,6 +15,15 @@ class ImageOutput:
 
         # Stores every saved frame in creation order
         self.saved_frames = []
+
+
+        try:
+            self.font = ImageFont.truetype(
+                "arial.ttf",
+                10
+            )
+        except:
+            self.font = ImageFont.load_default()
 
 
 
@@ -40,6 +50,41 @@ class ImageOutput:
 
 
 
+    def draw_square_labels(self, draw):
+
+        size = 640
+        square_size = size // 8
+
+
+        for square in range(1, 33):
+
+            row, column = self.square_mapper.coordinates(
+                square
+            )
+
+
+            # Small corner mark
+            x = column * square_size + 3
+            y = row * square_size + 3
+
+
+            # Yellow on playable dark squares
+            # Black on light squares
+            if (row + column) % 2 == 1:
+                label_colour = "yellow"
+            else:
+                label_colour = "black"
+
+
+            draw.text(
+                (x, y),
+                str(square),
+                fill=label_colour,
+                font=self.font
+            )
+
+
+
     def draw_piece(
         self,
         draw,
@@ -62,6 +107,7 @@ class ImageOutput:
         )
 
         radius = square_size // 3
+
 
         draw.ellipse(
             [
@@ -86,9 +132,14 @@ class ImageOutput:
             "white"
         )
 
+
         draw = ImageDraw.Draw(image)
 
+
         self.draw_board(draw)
+
+        self.draw_square_labels(draw)
+
 
         for square, piece in game_state.pieces.position.items():
 
@@ -98,11 +149,13 @@ class ImageOutput:
                     square
                 )
 
+
                 colour = (
                     "red"
                     if piece.color == "red"
                     else "white"
                 )
+
 
                 self.draw_piece(
                     draw,
@@ -111,17 +164,22 @@ class ImageOutput:
                     colour
                 )
 
+
         filename = f"frame{self.frame_counter:04}.png"
 
+
         image.save(filename)
+
 
         self.saved_frames.append(
             filename
         )
 
+
         print(
             f"IMAGE OUTPUT: Saved {filename}"
         )
+
 
         self.frame_counter += 1
 
@@ -136,17 +194,24 @@ class ImageOutput:
 
         size = 640
 
+
         image = Image.new(
             "RGB",
             (size, size),
             "white"
         )
 
+
         draw = ImageDraw.Draw(image)
+
 
         self.draw_board(draw)
 
+        self.draw_square_labels(draw)
+
+
         moving_piece = None
+
 
         for square, piece in game_state.pieces.position.items():
 
@@ -155,17 +220,20 @@ class ImageOutput:
                 moving_piece = piece
                 continue
 
+
             if piece:
 
                 row, column = self.square_mapper.coordinates(
                     square
                 )
 
+
                 colour = (
                     "red"
                     if piece.color == "red"
                     else "white"
                 )
+
 
                 self.draw_piece(
                     draw,
@@ -174,15 +242,18 @@ class ImageOutput:
                     colour
                 )
 
+
         if moving_piece:
 
             row, column = position
+
 
             colour = (
                 "red"
                 if moving_piece.color == "red"
                 else "white"
             )
+
 
             self.draw_piece(
                 draw,
@@ -191,18 +262,23 @@ class ImageOutput:
                 colour
             )
 
+
         filename = (
             f"animation{self.frame_counter:04}.png"
         )
 
+
         image.save(filename)
+
 
         self.saved_frames.append(
             filename
         )
 
+
         print(
             f"Saved animation frame {filename}"
         )
+
 
         self.frame_counter += 1

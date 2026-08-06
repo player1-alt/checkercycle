@@ -36,7 +36,6 @@ class BoardRenderer:
 
                 row, column = self.square_mapper.coordinates(square)
 
-                # Let the Piece decide how it should appear
                 display_board[row][column] = piece.symbol()
 
 
