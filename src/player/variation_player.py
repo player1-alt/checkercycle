@@ -2,7 +2,7 @@ import time
 
 from src.renderer.timeline import Timeline
 from src.renderer.move_event import MoveEvent
-
+from src.renderer.settings import SETTINGS
 
 class VariationPlayer:
     """
@@ -44,7 +44,10 @@ class VariationPlayer:
 
         print("Initial position hold...")
 
-        time.sleep(3)
+        time.sleep(
+            SETTINGS["initial_hold"]
+)
+
 
 
 

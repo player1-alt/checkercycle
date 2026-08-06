@@ -1,16 +1,23 @@
 import cv2
 
+from src.renderer.settings import SETTINGS
+
 
 class VideoOutput:
     """
     Creates an MP4 from saved PNG frames.
-    Board positions are held longer than animation frames.
+
+    Timing is controlled by config/settings.json:
+    - board position holds
+    - final position hold
     """
+
 
     def __init__(self):
 
         self.output_name = "CheckerCycle.mp4"
         self.fps = 2
+
 
 
     def create_video(self, frames):
@@ -19,6 +26,7 @@ class VideoOutput:
 
             print("No frames found.")
             return
+
 
 
         print()
@@ -30,6 +38,7 @@ class VideoOutput:
         print()
 
 
+
         first_frame = cv2.imread(
             frames[0]
         )
@@ -38,12 +47,14 @@ class VideoOutput:
         height, width, _ = first_frame.shape
 
 
+
         video = cv2.VideoWriter(
             self.output_name,
             cv2.VideoWriter_fourcc(*"mp4v"),
             self.fps,
             (width, height)
         )
+
 
 
         for frame in frames:
@@ -59,8 +70,9 @@ class VideoOutput:
                 video.write(image)
 
 
+
             # Board positions
-            # Hold so the learner can study the position
+            # Hold so learner can study position
             elif frame.startswith("frame"):
 
                 print(
@@ -68,9 +80,12 @@ class VideoOutput:
                 )
 
 
-                for _ in range(8):
+                for _ in range(
+                    SETTINGS["video"]["position_hold_frames"]
+                ):
 
                     video.write(image)
+
 
 
         # Final position extra hold
@@ -80,25 +95,35 @@ class VideoOutput:
         )
 
 
+        final_hold = SETTINGS["video"]["final_hold"]
+
+
         print()
+
         print(
-            "Holding final position for 5 seconds"
+            f"Holding final position for {final_hold} seconds"
         )
 
 
-        for i in range(self.fps * 5):
+
+        for i in range(
+            self.fps * final_hold
+        ):
 
             video.write(final_image)
 
             print(
-                f"Final hold {i+1}/{self.fps * 5}"
+                f"Final hold {i+1}/{self.fps * final_hold}"
             )
+
 
 
         video.release()
 
 
+
         print()
+
         print(
             f"VIDEO OUTPUT: Saved {self.output_name}"
         )
