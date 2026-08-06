@@ -4,11 +4,13 @@ import cv2
 class VideoOutput:
     """
     Creates an MP4 from saved PNG frames.
+    Board positions are held longer than animation frames.
     """
 
     def __init__(self):
 
         self.output_name = "CheckerCycle.mp4"
+        self.fps = 2
 
 
     def create_video(self, frames):
@@ -32,51 +34,71 @@ class VideoOutput:
             frames[0]
         )
 
+
         height, width, _ = first_frame.shape
 
 
         video = cv2.VideoWriter(
             self.output_name,
             cv2.VideoWriter_fourcc(*"mp4v"),
-            2,
+            self.fps,
             (width, height)
         )
 
 
         for frame in frames:
 
-            image = cv2.imread(frame)
+            image = cv2.imread(
+                frame
+            )
 
-            video.write(image)
+
+            # Moving pieces
+            if frame.startswith("animation"):
+
+                video.write(image)
 
 
-        # Hold the final board position
+            # Board positions
+            # Hold so the learner can study the position
+            elif frame.startswith("frame"):
+
+                print(
+                    f"Holding board position: {frame}"
+                )
+
+
+                for _ in range(8):
+
+                    video.write(image)
+
+
+        # Final position extra hold
+
         final_image = cv2.imread(
             frames[-1]
         )
 
 
-        final_hold_seconds = 5
-        fps = 2
-
-        hold_frames = final_hold_seconds * fps
-
-
+        print()
         print(
-            f"Holding final position for {final_hold_seconds} seconds"
+            "Holding final position for 5 seconds"
         )
 
 
-        for _ in range(hold_frames):
+        for i in range(self.fps * 5):
 
-            video.write(
-                final_image
+            video.write(final_image)
+
+            print(
+                f"Final hold {i+1}/{self.fps * 5}"
             )
 
 
         video.release()
 
 
+        print()
         print(
             f"VIDEO OUTPUT: Saved {self.output_name}"
         )
