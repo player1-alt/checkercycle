@@ -86,12 +86,13 @@ class ImageOutput:
 
 
     def draw_piece(
-        self,
-        draw,
-        row,
-        column,
-        colour
-    ):
+    self,
+    draw,
+    row,
+    column,
+    colour,
+    king=False
+):
 
         size = 640
         square_size = size // 8
@@ -119,6 +120,84 @@ class ImageOutput:
             fill=colour,
             outline="black"
         )
+        if king:
+
+            # Crown base
+            draw.rectangle(
+                [
+                    center_x - 14,
+                    center_y - 8,
+                    center_x + 14,
+                    center_y - 3
+                ],
+                fill="gold",
+                outline="black"
+            )
+
+            # Left point
+            draw.polygon(
+                [
+                    (center_x - 14, center_y - 3),
+                    (center_x - 8, center_y - 18),
+                    (center_x - 2, center_y - 3)
+                ],
+                fill="gold",
+                outline="black"
+            )
+
+            # Middle point
+            draw.polygon(
+                [
+                    (center_x - 4, center_y - 3),
+                    (center_x, center_y - 22),
+                    (center_x + 4, center_y - 3)
+                ],
+                fill="gold",
+                outline="black"
+            )
+
+            # Right point
+            draw.polygon(
+                [
+                    (center_x + 2, center_y - 3),
+                    (center_x + 8, center_y - 18),
+                    (center_x + 14, center_y - 3)
+                ],
+                fill="gold",
+                outline="black"
+            )
+
+            # Jewels
+            draw.ellipse(
+                [
+                    center_x - 10,
+                    center_y - 20,
+                    center_x - 6,
+                    center_y - 16
+                ],
+                fill="red"
+            )
+
+            draw.ellipse(
+                [
+                    center_x - 2,
+                    center_y - 24,
+                    center_x + 2,
+                    center_y - 20
+                ],
+                fill="blue"
+            )
+
+            draw.ellipse(
+                [
+                    center_x + 6,
+                    center_y - 20,
+                    center_x + 10,
+                    center_y - 16
+                ],
+                fill="green"
+            )
+
 
 
 
@@ -158,11 +237,12 @@ class ImageOutput:
 
 
                 self.draw_piece(
-                    draw,
-                    row,
-                    column,
-                    colour
-                )
+    draw,
+    row,
+    column,
+    colour,
+    piece.king
+)
 
 
         filename = f"frame{self.frame_counter:04}.png"
@@ -236,11 +316,12 @@ class ImageOutput:
 
 
                 self.draw_piece(
-                    draw,
-                    row,
-                    column,
-                    colour
-                )
+    draw,
+    row,
+    column,
+    colour,
+    piece.king
+)
 
 
         if moving_piece:
@@ -256,11 +337,12 @@ class ImageOutput:
 
 
             self.draw_piece(
-                draw,
-                row,
-                column,
-                colour
-            )
+    draw,
+    row,
+    column,
+    colour,
+    moving_piece.king
+)
 
 
         filename = (

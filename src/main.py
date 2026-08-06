@@ -7,13 +7,11 @@ from src.player.variation_player import VariationPlayer
 from src.renderer.renderer import Renderer
 
 
-
 def main():
 
     print("CheckerCycle Renderer")
     print("---------------------")
     print()
-
 
     # ==========================
     # KING TEST
@@ -24,24 +22,17 @@ def main():
 
     king_state = GameState()
 
-
     # Clear board
-
     for square in king_state.pieces.position:
-
         king_state.pieces.position[square] = None
 
-
-    # Place red king on square 29
-
+    # Place a red king
     king_state.pieces.position[29] = Piece(
         "red",
         king=True
     )
 
-
     piece = king_state.pieces.piece_at(29)
-
 
     print(
         "Piece at square 29:",
@@ -50,8 +41,6 @@ def main():
 
     print()
 
-
-
     # ==========================
     # PROMOTION TEST
     # ==========================
@@ -59,24 +48,18 @@ def main():
     print("PROMOTION TEST")
     print("---------------------")
 
-
     promotion_state = GameState()
-
 
     piece = promotion_state.pieces.piece_at(25)
 
-
     promotion_state.pieces.position[25] = None
 
-
     promotion_state.pieces.position[4] = piece
-
 
     promotion_state.check_promotion(
         piece,
         4
     )
-
 
     print(
         "Piece at square 4:",
@@ -85,73 +68,57 @@ def main():
 
     print()
 
-
-
     # ==========================
-    # KING ANIMATION TEST
+    # PROMOTION ANIMATION TEST
     # ==========================
 
-    print("KING ANIMATION TEST")
+    print("PROMOTION ANIMATION TEST")
     print("---------------------")
 
-
-    king_game = GameState()
-
+    promotion_game = GameState()
 
     # Clear board
+    for square in promotion_game.pieces.position:
+        promotion_game.pieces.position[square] = None
 
-    for square in king_game.pieces.position:
-
-        king_game.pieces.position[square] = None
-
-
-
-    # Create king
-
-    king_game.pieces.position[29] = Piece(
-        "red",
-        king=True
+    # Place a normal red man
+    promotion_game.pieces.position[25] = Piece(
+        "red"
     )
 
-
     print(
-        "King placed:",
-        king_game.pieces.piece_at(29).symbol()
+        "Piece placed:",
+        promotion_game.pieces.piece_at(25).symbol()
     )
 
     print()
 
-
-
     renderer = Renderer()
-
 
     parser = CheckersParser()
 
-
     move = parser.parse(
-        "29-25"
+        "25-29"
     )
 
+# ===== END OF PART 1 =====
+# ===== PART 2 =====
 
     variation = Variation(
-        "King Animation",
+        "Promotion Animation",
         [
             move
         ]
     )
 
-
     player = VariationPlayer(
-        king_game,
+        promotion_game,
         renderer
     )
-
 
     player.play(
         variation
     )
-
 
 
 if __name__ == "__main__":
