@@ -5,131 +5,309 @@ from src.domains.checkers.square_mapper import SquareMapper
 class GameState:
 
     def __init__(self):
+
         self.pieces = Pieces()
         self.square_mapper = SquareMapper()
 
     # ==========================
-    # FIND CAPTURED SQUARES
+    # AUTOMATIC MULTI-JUMP FINDER
     # ==========================
 
-    def find_captured_squares(
+    def find_jump_path(
         self,
         from_square,
-        to_square
+        to_square,
+        piece
     ):
 
-        from_row, from_col = self.square_mapper.coordinates(
+        start = self.square_mapper.coordinates(
             from_square
         )
 
-        to_row, to_col = self.square_mapper.coordinates(
+        target = self.square_mapper.coordinates(
             to_square
         )
 
-        print()
-        print("========== CAPTURE DEBUG ==========")
-        print(f"FROM: {from_square} -> ({from_row}, {from_col})")
-        print(f"TO:   {to_square} -> ({to_row}, {to_col})")
+        # Copy the current board so the search
+        # can simulate jumps without changing
+        # the real game state.
 
-        row_difference = to_row - from_row
-        col_difference = to_col - from_col
-
-        row_distance = abs(row_difference)
-        col_distance = abs(col_difference)
-
-        print(f"ROW DIFFERENCE: {row_difference}")
-        print(f"COL DIFFERENCE: {col_difference}")
-
-        # A checkers move must travel diagonally.
-        if row_distance != col_distance:
-            print("NOT A DIAGONAL MOVE")
-            print("===================================")
-            print()
-
-            return []
-
-        if row_distance < 2:
-            print("NOT A CAPTURE")
-            print("===================================")
-            print()
-
-            return []
-
-        row_step = 1 if row_difference > 0 else -1
-        col_step = 1 if col_difference > 0 else -1
-
-        captured_squares = []
-
-        current_row = from_row + row_step
-        current_col = from_col + col_step
-
-        while (
-            current_row != to_row
-            and current_col != to_col
-        ):
-
-            square = self.square_mapper.square(
-                current_row,
-                current_col
-            )
-
-            piece = self.pieces.piece_at(square)
-
-            if piece is not None:
-
-                captured_squares.append(square)
-
-                print(
-                    f"CAPTURE CANDIDATE: "
-                    f"{square}"
-                )
-
-            current_row += row_step
-            current_col += col_step
-
-        print(
-            f"CAPTURED SQUARES: "
-            f"{captured_squares}"
+        board = dict(
+            self.pieces.position
         )
 
-        print("===================================")
-        print()
+        # Remove the moving piece from its
+        # starting square during the search.
 
-        return captured_squares
+        board[from_square] = None
+
+        path = [from_square]
+        captured = []
+
+        result = self._search_jump_path(
+            current_square=from_square,
+            target_coordinates=target,
+            piece=piece,
+            board=board,
+            path=path,
+            captured=captured
+        )
+
+        return result
+
+    # ==========================
+    # RECURSIVE JUMP SEARCH
+    # ==========================
+
+    def _search_jump_path(
+        self,
+        current_square,
+        target_coordinates,
+        piece,
+        board,
+        path,
+        captured
+    ):
+
+        current_row, current_col = (
+            self.square_mapper.coordinates(
+                current_square
+            )
+        )
+
+        target_row, target_col = (
+            target_coordinates
+        )
+
+        # We have reached the requested
+        # destination.
+
+        if (
+            current_row == target_row
+            and current_col == target_col
+        ):
+
+            if len(path) > 1:
+
+                return (
+                    list(path),
+                    list(captured)
+                )
+
+            return None
+
+        directions = [
+            (-1, -1),
+            (-1, 1),
+            (1, -1),
+            (1, 1)
+        ]
+
+        for row_direction, col_direction in directions:
+
+            middle_row = (
+                current_row
+                + row_direction
+            )
+
+            middle_col = (
+                current_col
+                + col_direction
+            )
+
+            landing_row = (
+                current_row
+                + (row_direction * 2)
+            )
+
+            landing_col = (
+                current_col
+                + (col_direction * 2)
+            )
+
+            # Make sure the landing square is
+            # on the playable board.
+
+            if not self._valid_coordinates(
+                landing_row,
+                landing_col
+            ):
+
+                continue
+
+            try:
+
+                middle_square = (
+                    self.square_mapper.square(
+                        middle_row,
+                        middle_col
+                    )
+                )
+
+                landing_square = (
+                    self.square_mapper.square(
+                        landing_row,
+                        landing_col
+                    )
+                )
+
+            except KeyError:
+
+                continue
+
+            middle_piece = board.get(
+                middle_square
+            )
+
+            landing_piece = board.get(
+                landing_square
+            )
+
+            # There must be an opponent piece
+            # on the jumped square.
+
+            if middle_piece is None:
+                continue
+
+            if middle_piece.color == piece.color:
+                continue
+
+            # Landing square must be empty.
+
+            if landing_piece is not None:
+                continue
+
+            # Don't capture the same piece twice.
+
+            if middle_square in captured:
+                continue
+
+            # Simulate this jump.
+
+            board[current_square] = None
+            board[middle_square] = None
+            board[landing_square] = piece
+
+            path.append(
+                landing_square
+            )
+
+            captured.append(
+                middle_square
+            )
+
+            result = self._search_jump_path(
+                current_square=landing_square,
+                target_coordinates=target_coordinates,
+                piece=piece,
+                board=board,
+                path=path,
+                captured=captured
+            )
+
+            if result is not None:
+                return result
+
+            # Undo simulated jump.
+
+            board[landing_square] = None
+            board[middle_square] = middle_piece
+            board[current_square] = piece
+
+            path.pop()
+            captured.pop()
+
+        return None
+
+    # ==========================
+    # BOARD COORDINATE CHECK
+    # ==========================
+
+    def _valid_coordinates(
+        self,
+        row,
+        column
+    ):
+
+        return (
+            0 <= row <= 7
+            and 0 <= column <= 7
+        )
 
     # ==========================
     # APPLY MOVE
     # ==========================
 
-    def apply_move(self, move):
+    def apply_move(
+        self,
+        move
+    ):
 
         piece = self.pieces.piece_at(
             move.from_square
         )
 
-        # If the parser already supplied
-        # capture information, preserve it.
+        # -------------------------------------------------
+        # AUTOMATICALLY DISCOVER A MULTI-JUMP
         #
-        # Otherwise determine captures
-        # automatically from the board.
+        # Example:
+        #
+        #     27-11
+        #
+        # becomes internally:
+        #
+        #     27 -> 18 -> 11
+        #
+        # with captures:
+        #
+        #     23, 15
+        # -------------------------------------------------
 
-        if not move.captured_squares:
+        if (
+            not move.is_capture
+            and not move.captured_squares
+            and len(move.path) == 2
+        ):
 
-            captured_squares = self.find_captured_squares(
+            result = self.find_jump_path(
                 move.from_square,
-                move.to_square
+                move.to_square,
+                piece
             )
 
-            if captured_squares:
+            if result is not None:
+
+                discovered_path, discovered_captures = (
+                    result
+                )
+
+                move.path = discovered_path
+
+                move.captured_squares = (
+                    discovered_captures
+                )
+
+                move.is_capture = True
+
+                print()
+                print(
+                    "AUTOMATIC MULTI-JUMP DETECTED"
+                )
 
                 print(
-                    "Automatically detected captures:",
-                    captured_squares
+                    f"Path: {move.path}"
                 )
 
-                move.captured_squares.extend(
-                    captured_squares
+                print(
+                    f"Captured: "
+                    f"{move.captured_squares}"
                 )
+
+                print()
+
+        print(
+            f"Final move path: {move.path}"
+        )
 
         print(
             f"Final captured squares: "
@@ -137,25 +315,31 @@ class GameState:
         )
 
         # Remove moving piece from origin.
+
         self.pieces.position[
             move.from_square
         ] = None
 
-        # Remove every captured piece.
+        # Remove captured pieces.
+
         for square in move.captured_squares:
 
             print(
-                f"Removing piece from square {square}"
+                f"Removing piece from square "
+                f"{square}"
             )
 
             self.pieces.position[
                 square
             ] = None
 
-        # Put moving piece on destination.
+        # Place moving piece at final destination.
+
         self.pieces.position[
             move.to_square
         ] = piece
+
+        # Check promotion.
 
         self.check_promotion(
             piece,
@@ -189,9 +373,11 @@ class GameState:
         if piece.color == "red":
 
             if square in red_king_row:
+
                 piece.promote()
 
         elif piece.color == "white":
 
             if square in white_king_row:
+
                 piece.promote()
