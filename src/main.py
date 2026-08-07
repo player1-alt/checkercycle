@@ -1,3 +1,4 @@
+
 import sys
 
 from src.domains.checkers.game_state import GameState
@@ -13,6 +14,40 @@ def main():
     print("CheckerCycle Renderer")
     print("---------------------")
     print()
+
+    # ==========================
+    # CHECK INPUT FILE
+    # ==========================
+
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+    else:
+        print("No game file supplied.")
+        print()
+        print("Usage:")
+        print("    CheckerCycle.exe <game.txt>")
+        print()
+        return
+
+    # ==========================
+    # LOAD GAME
+    # ==========================
+
+    book_loader = BookLoader()
+    book_parser = CheckersBookParser()
+
+    try:
+        text = book_loader.load(filename)
+
+    except FileNotFoundError:
+        print(f"Game file not found: {filename}")
+        print()
+        return
+
+    except OSError as error:
+        print(f"Could not open game file: {error}")
+        print()
+        return
 
     # ==========================
     # NORMAL GAME START
@@ -33,18 +68,8 @@ def main():
     renderer = Renderer()
 
     # ==========================
-    # LOAD GAME FROM TXT
+    # PARSE GAME
     # ==========================
-
-    book_loader = BookLoader()
-    book_parser = CheckersBookParser()
-
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-    else:
-        filename = "data/sample_game.txt"
-
-    text = book_loader.load(filename)
 
     variation = book_parser.parse_book(
         text,
