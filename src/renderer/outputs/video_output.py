@@ -3,67 +3,36 @@ import cv2
 from src.renderer.settings import SETTINGS
 
 
-class VideoOutput:
-    """
-    Creates an MP4 from saved PNG frames.
 
-    Timing controlled by timeline durations.
-    """
+class VideoOutput:
 
 
     def __init__(self):
 
         self.output_name = "CheckerCycle.mp4"
 
-        # Frames per second
         self.fps = 2
 
 
 
     def create_video(
         self,
-        timeline
+        frames,
+        events=None
     ):
 
-        if not timeline:
 
-            print("No timeline found.")
+        if not frames:
+
+            print("No frames found.")
+
             return
-
-
-
-        print()
-        print("=====================")
-        print("VIDEO TIMELINE")
-        print("=====================")
-
-
-        for item in timeline:
-
-            print(
-                item["frame"],
-                "->",
-                item["duration"],
-                "seconds"
-            )
-
-
-        print()
 
 
 
         first_frame = cv2.imread(
-            timeline[0]["frame"]
+            frames[0]
         )
-
-
-        if first_frame is None:
-
-            print(
-                "Could not load first frame."
-            )
-
-            return
 
 
 
@@ -81,21 +50,21 @@ class VideoOutput:
 
             self.fps,
 
-            (
-                width,
-                height
-            )
+            (width, height)
 
         )
 
 
 
-        for item in timeline:
+        print()
+
+        print("=====================")
+        print("VIDEO TIMELINE")
+        print("=====================")
 
 
-            frame = item["frame"]
 
-            duration = item["duration"]
+        for index, frame in enumerate(frames):
 
 
             image = cv2.imread(
@@ -103,35 +72,70 @@ class VideoOutput:
             )
 
 
-            if image is None:
 
-                print(
-                    "Skipping missing frame:",
-                    frame
-                )
-
-                continue
+            hold_seconds = 1
 
 
 
-            frame_count = int(
-                self.fps * duration
-            )
+            if events:
+
+                hold_seconds = events[index]["duration"]
+
 
 
             print(
-                f"Holding {frame} for {duration}s ({frame_count} frames)"
+                f"{frame} -> {hold_seconds}s"
+            )
+
+
+
+            hold_frames = int(
+                self.fps * hold_seconds
+            )
+
+
+
+            print(
+                f"Holding {frame} for {hold_seconds}s ({hold_frames} frames)"
             )
 
 
 
             for _ in range(
-                frame_count
+                hold_frames
             ):
 
                 video.write(
                     image
                 )
+
+
+
+        final_hold = SETTINGS["final_hold"]
+
+
+
+        final_image = cv2.imread(
+            frames[-1]
+        )
+
+
+
+        print()
+
+        print(
+            f"Holding final position for {final_hold} seconds"
+        )
+
+
+
+        for _ in range(
+            self.fps * final_hold
+        ):
+
+            video.write(
+                final_image
+            )
 
 
 
@@ -141,15 +145,8 @@ class VideoOutput:
 
         print()
 
+        print("=====================")
         print(
-            "====================="
+            f"VIDEO OUTPUT: {self.output_name}"
         )
-
-        print(
-            "VIDEO OUTPUT:",
-            self.output_name
-        )
-
-        print(
-            "====================="
-        )
+        print("=====================")

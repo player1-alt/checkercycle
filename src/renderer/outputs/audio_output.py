@@ -1,43 +1,39 @@
-from src.renderer.audio.audio_player import AudioPlayer
 from src.renderer.audio.audio_map import AUDIO_MAP
+from pydub import AudioSegment
+import os
 
 
 class AudioOutput:
     """
-    Converts MoveEvent information into real audio playback.
-
-    Receives:
-    - move path
-    - captured squares
-    - duration
-    - hold time
+    Builds MP3 audio timeline from MoveEvents.
 
     Uses:
-    - audio_map.json for square -> song assignment
-    - MoveEvent as timing authority
+    - audio_map.json
+    - MoveEvent timing
+    - square -> song memory palace
     """
 
 
     def __init__(self):
 
-        self.player = AudioPlayer()
+        self.audio_track = AudioSegment.empty()
+
+        self.base_path = "assets/audio"
 
 
 
-    def display(self, event):
-
-        print("AUDIO OUTPUT:")
-        print("Preparing audio:")
-
+    def add_event(self, event):
 
         move = event.move
 
-        files = []
 
+        print()
+        print("AUDIO EVENT")
+        print("----------------")
 
-        # Build audio sequence
 
         for square in move.path:
+
 
             print(
                 f"Square {square}"
@@ -46,44 +42,77 @@ class AudioOutput:
 
             if square in AUDIO_MAP:
 
-                files.append(
-                    f"assets/audio/{AUDIO_MAP[square]}"
+
+                filename = AUDIO_MAP[square]
+
+
+                filepath = os.path.join(
+                    self.base_path,
+                    filename
                 )
+
+
+                if os.path.exists(filepath):
+
+
+                    print(
+                        "Adding:",
+                        filepath
+                    )
+
+
+                    sound = AudioSegment.from_mp3(
+                        filepath
+                    )
+
+
+                    # Match video timing
+
+                    duration = (
+                        event.duration
+                        +
+                        event.hold_time
+                    ) * 1000
+
+
+                    sound = sound[:duration]
+
+
+                    self.audio_track += sound
+
+
+                else:
+
+                    print(
+                        "Missing audio:",
+                        filepath
+                    )
+
 
             else:
 
                 print(
-                    f"No audio assigned to square {square}"
+                    "No song assigned:",
+                    square
                 )
 
 
 
-        # Playback follows MoveEvent timing
+    def save(self):
 
-        if files:
-
-            self.player.play_sequence(
-                files,
-                move_time=event.duration,
-                hold_time=event.hold_time
-            )
+        filename = "CheckerCycle_audio.mp3"
 
 
-
-        # Capture sound placeholder
-
-        if event.captured_squares:
-
-            print(
-                "Capture audio:"
-            )
-
-
-            for square in event.captured_squares:
-
-                print(
-                    f"Capture Square {square}"
-                )
+        self.audio_track.export(
+            filename,
+            format="mp3"
+        )
 
 
         print()
+        print("=====================")
+        print(
+            "AUDIO OUTPUT:",
+            filename
+        )
+        print("=====================")
