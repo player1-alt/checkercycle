@@ -8,6 +8,7 @@ from src.renderer.engine import RendererEngine
 
 class CheckerCycleApp:
 
+
     def __init__(self, root):
 
         self.root = root
@@ -31,6 +32,7 @@ class CheckerCycleApp:
             "settings.json"
         )
 
+
         self.audio_map_file = os.path.join(
             "config",
             "audio_map.json"
@@ -39,19 +41,15 @@ class CheckerCycleApp:
 
         self.create_widgets()
 
+
         self.load_settings()
-
-
-    # ==========================
-    # CREATE GUI
-    # ==========================
-
     def create_widgets(self):
+
 
         title = ttk.Label(
             self.root,
             text="CHECKERCYCLE",
-            font=("Arial", 20, "bold")
+            font=("Arial",20,"bold")
         )
 
         title.pack(
@@ -135,11 +133,13 @@ class CheckerCycleApp:
             0
         )
 
+
         self.start_hold = self.create_setting(
             timing_frame,
             "Start hold:",
             1
         )
+
 
         self.hold_increase = self.create_setting(
             timing_frame,
@@ -147,11 +147,13 @@ class CheckerCycleApp:
             2
         )
 
+
         self.audio_move_hold = self.create_setting(
             timing_frame,
             "Audio move hold:",
             3
         )
+
 
         self.final_hold = self.create_setting(
             timing_frame,
@@ -207,14 +209,13 @@ class CheckerCycleApp:
         self.status_label.pack(
             pady=5
         )
-
-
     def create_setting(
         self,
         parent,
         label_text,
         row
     ):
+
 
         ttk.Label(
             parent,
@@ -232,6 +233,7 @@ class CheckerCycleApp:
             width=10
         )
 
+
         entry.grid(
             row=row,
             column=1,
@@ -241,52 +243,57 @@ class CheckerCycleApp:
 
 
         return entry
-    # ==========================
-    # BROWSE GAME
-    # ==========================
+
+
 
     def browse_game(self):
+
 
         filename = filedialog.askopenfilename(
             title="Select Checkers Game",
             filetypes=[
-                ("Text files", "*.txt"),
-                ("All files", "*.*")
+                ("Text files","*.txt"),
+                ("All files","*.*")
             ]
         )
 
 
         if filename:
 
+
             self.game_file.delete(
                 0,
                 tk.END
             )
+
 
             self.game_file.insert(
                 0,
                 filename
             )
 
+
             self.status_label.config(
                 text="Status: Game selected"
             )
 
 
-    # ==========================
-    # LOAD SETTINGS
-    # ==========================
 
     def load_settings(self):
 
+
         try:
+
 
             with open(
                 self.settings_file,
                 "r"
             ) as file:
 
-                settings = json.load(file)
+
+                settings = json.load(
+                    file
+                )
 
 
             timeline = settings.get(
@@ -294,10 +301,12 @@ class CheckerCycleApp:
                 {}
             )
 
+
             audio = settings.get(
                 "audio",
                 {}
             )
+
 
             video = settings.get(
                 "video",
@@ -313,6 +322,7 @@ class CheckerCycleApp:
                 )
             )
 
+
             self.set_entry(
                 self.start_hold,
                 timeline.get(
@@ -320,6 +330,7 @@ class CheckerCycleApp:
                     3
                 )
             )
+
 
             self.set_entry(
                 self.hold_increase,
@@ -329,6 +340,7 @@ class CheckerCycleApp:
                 )
             )
 
+
             self.set_entry(
                 self.audio_move_hold,
                 audio.get(
@@ -336,6 +348,7 @@ class CheckerCycleApp:
                     2
                 )
             )
+
 
             self.set_entry(
                 self.final_hold,
@@ -348,15 +361,9 @@ class CheckerCycleApp:
 
         except FileNotFoundError:
 
+
             pass
 
-
-        except Exception as e:
-
-            print(
-                "Settings load error:",
-                e
-            )
 
 
     def set_entry(
@@ -365,22 +372,19 @@ class CheckerCycleApp:
         value
     ):
 
+
         entry.delete(
             0,
             tk.END
         )
 
+
         entry.insert(
             0,
             str(value)
         )
-
-
-    # ==========================
-    # SAVE SETTINGS
-    # ==========================
-
     def save_settings(self):
+
 
         os.makedirs(
             "config",
@@ -406,6 +410,7 @@ class CheckerCycleApp:
                     self.get_number(
                         self.hold_increase
                     )
+
             },
 
 
@@ -415,6 +420,7 @@ class CheckerCycleApp:
                     self.get_number(
                         self.audio_move_hold
                     )
+
             },
 
 
@@ -424,6 +430,7 @@ class CheckerCycleApp:
                     self.get_number(
                         self.final_hold
                     )
+
             }
 
         }
@@ -433,6 +440,7 @@ class CheckerCycleApp:
             self.settings_file,
             "w"
         ) as file:
+
 
             json.dump(
                 settings,
@@ -446,32 +454,35 @@ class CheckerCycleApp:
         )
 
 
+
     def get_number(
         self,
         entry
     ):
 
+
         value = float(
             entry.get()
         )
+
 
         if value.is_integer():
 
             return int(value)
 
+
         return value
 
 
-    # ==========================
-    # RENDER
-    # ==========================
 
     def render_game(self):
+
 
         filename = self.game_file.get().strip()
 
 
         if not filename:
+
 
             self.status_label.config(
                 text="Status: Select a game file"
@@ -480,7 +491,9 @@ class CheckerCycleApp:
             return
 
 
+
         if not os.path.isfile(filename):
+
 
             self.status_label.config(
                 text="Status: Game file not found"
@@ -489,16 +502,21 @@ class CheckerCycleApp:
             return
 
 
+
         self.status_label.config(
             text="Status: Rendering..."
         )
 
+
         self.root.update()
+
 
 
         try:
 
+
             engine = RendererEngine()
+
 
             engine.render(
                 filename
@@ -512,27 +530,28 @@ class CheckerCycleApp:
 
         except Exception as e:
 
+
             print(
                 "Render error:",
                 e
             )
 
+
             self.status_label.config(
                 text="Status: Render failed"
             )
-    # ==========================
-    # AUDIO MAP WINDOW
-    # ==========================
-
     def open_audio_map(self):
+
 
         window = tk.Toplevel(
             self.root
         )
 
+
         window.title(
             "CheckerCycle - Audio Map"
         )
+
 
         window.geometry(
             "650x700"
@@ -552,6 +571,7 @@ class CheckerCycleApp:
             window
         )
 
+
         container.pack(
             fill="both",
             expand=True,
@@ -564,11 +584,13 @@ class CheckerCycleApp:
             container
         )
 
+
         scrollbar = ttk.Scrollbar(
             container,
             orient="vertical",
             command=canvas.yview
         )
+
 
         scroll_frame = ttk.Frame(
             canvas
@@ -577,9 +599,10 @@ class CheckerCycleApp:
 
         scroll_frame.bind(
             "<Configure>",
-            lambda e: canvas.configure(
-                scrollregion=canvas.bbox("all")
-            )
+            lambda e:
+                canvas.configure(
+                    scrollregion=canvas.bbox("all")
+                )
         )
 
 
@@ -610,10 +633,12 @@ class CheckerCycleApp:
 
         audio_map = self.load_audio_map()
 
+
         entries = {}
 
 
         for square in range(1,33):
+
 
             ttk.Label(
                 scroll_frame,
@@ -631,6 +656,7 @@ class CheckerCycleApp:
                 scroll_frame,
                 width=45
             )
+
 
             entry.grid(
                 row=square,
@@ -652,6 +678,7 @@ class CheckerCycleApp:
             entries[square] = entry
 
 
+
             ttk.Button(
                 scroll_frame,
                 text="Browse",
@@ -665,6 +692,7 @@ class CheckerCycleApp:
             )
 
 
+
         ttk.Button(
             window,
             text="SAVE AUDIO MAP",
@@ -675,9 +703,9 @@ class CheckerCycleApp:
                 )
         ).pack(
             pady=10
-        )    
-
+        )
     def load_audio_map(self):
+
 
         try:
 
@@ -688,9 +716,11 @@ class CheckerCycleApp:
 
                 return json.load(file)
 
+
         except:
 
             return {}
+
 
 
     def browse_audio(
@@ -698,21 +728,30 @@ class CheckerCycleApp:
         entry
     ):
 
+
         filename = filedialog.askopenfilename(
+
             title="Select MP3",
+
             filetypes=[
+
                 ("MP3 files","*.mp3"),
+
                 ("All files","*.*")
+
             ]
+
         )
 
 
         if filename:
 
+
             entry.delete(
                 0,
                 tk.END
             )
+
 
             entry.insert(
                 0,
@@ -720,11 +759,13 @@ class CheckerCycleApp:
             )
 
 
+
     def save_audio_map(
         self,
         entries,
         window
     ):
+
 
         os.makedirs(
             "config",
@@ -737,15 +778,16 @@ class CheckerCycleApp:
 
         for square in range(1,33):
 
-            audio_map[str(square)] = entries[
-                square
-            ].get()
+
+            audio_map[str(square)] = entries[square].get()
+
 
 
         with open(
             self.audio_map_file,
             "w"
         ) as file:
+
 
             json.dump(
                 audio_map,
@@ -754,15 +796,13 @@ class CheckerCycleApp:
             )
 
 
+
         self.status_label.config(
             text="Status: Audio map saved"
         )
 
 
         window.destroy()
-
-
-
 def main():
 
     root = tk.Tk()
@@ -778,3 +818,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
+
+
