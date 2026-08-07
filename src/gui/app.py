@@ -14,19 +14,22 @@ class CheckerCycleApp:
         self.root.geometry("520x650")
         self.root.resizable(False, False)
 
-        # ==========================
-        # SETTINGS FILE
-        # ==========================
-
         self.settings_file = os.path.join(
             "config",
             "settings.json"
         )
 
-        self.create_widgets()
+        self.audio_map_file = os.path.join(
+            "config",
+            "audio_map.json"
+        )
 
-        # Load real settings
+        self.create_widgets()
         self.load_settings()
+
+    # ==========================
+    # CREATE GUI
+    # ==========================
 
     def create_widgets(self):
 
@@ -161,7 +164,8 @@ class CheckerCycleApp:
 
         self.audio_button = ttk.Button(
             audio_frame,
-            text="Configure Audio Map"
+            text="Configure Audio Map",
+            command=self.open_audio_map
         )
 
         self.audio_button.pack(
@@ -189,7 +193,8 @@ class CheckerCycleApp:
 
         self.render_button = ttk.Button(
             self.root,
-            text="RENDER GAME"
+            text="RENDER GAME",
+            command=self.render_game
         )
 
         self.render_button.pack(
@@ -208,6 +213,10 @@ class CheckerCycleApp:
         self.status_label.pack(
             pady=5
         )
+
+    # ==========================
+    # SETTING ENTRY
+    # ==========================
 
     def create_setting(
         self,
@@ -295,7 +304,6 @@ class CheckerCycleApp:
             audio = settings.get(
                 "audio",
                 {}
-
             )
 
             video = settings.get(
@@ -358,10 +366,10 @@ class CheckerCycleApp:
                 text="Status: Invalid settings.json"
             )
 
-        except Exception as error:
+        except Exception:
 
             self.status_label.config(
-                text=f"Status: Error loading settings"
+                text="Status: Error loading settings"
             )
 
     # ==========================
@@ -480,15 +488,317 @@ class CheckerCycleApp:
 
         return value
 
+    # ==========================
+    # RENDER GAME
+    # ==========================
+
+    def render_game(self):
+
+        filename = self.game_file.get().strip()
+
+        if not filename:
+
+            self.status_label.config(
+                text="Status: Select a game file"
+            )
+
+            return
+
+        if not os.path.isfile(filename):
+
+            self.status_label.config(
+                text="Status: Game file not found"
+            )
+
+            return
+
+        self.status_label.config(
+            text="Status: Ready to render"
+        )
+
+        print(
+            "Selected game:",
+            filename
+        )
+
+    # ==========================
+    # AUDIO MAP WINDOW
+    # ==========================
+
+    def open_audio_map(self):
+
+        window = tk.Toplevel(
+            self.root
+        )
+
+        window.title(
+            "CheckerCycle - Audio Map"
+        )
+
+        window.geometry(
+            "650x700"
+        )
+
+        window.resizable(
+            False,
+            False
+        )
+
+        ttk.Label(
+            window,
+            text="AUDIO MAP",
+            font=("Arial", 18, "bold")
+        ).pack(
+            pady=(15, 5)
+        )
+
+        ttk.Label(
+            window,
+            text="Assign an MP3 file to each board square."
+        ).pack(
+            pady=(0, 10)
+        )
+
+        # ==========================
+        # SCROLLABLE AREA
+        # ==========================
+
+        container = ttk.Frame(
+            window
+        )
+
+        container.pack(
+            fill="both",
+            expand=True,
+            padx=15,
+            pady=10
+        )
+
+        canvas = tk.Canvas(
+            container
+        )
+
+        scrollbar = ttk.Scrollbar(
+            container,
+            orient="vertical",
+            command=canvas.yview
+        )
+
+        scroll_frame = ttk.Frame(
+            canvas
+        )
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda event: canvas.configure(
+                scrollregion=canvas.bbox("all")
+            )
+        )
+
+        canvas.create_window(
+            (0, 0),
+            window=scroll_frame,
+            anchor="nw"
+        )
+
+        canvas.configure(
+            yscrollcommand=scrollbar.set
+        )
+
+        canvas.pack(
+            side="left",
+            fill="both",
+            expand=True
+        )
+
+        scrollbar.pack(
+            side="right",
+            fill="y"
+        )
+
+        # ==========================
+        # LOAD AUDIO MAP
+        # ==========================
+
+        audio_map = self.load_audio_map()
+
+        audio_entries = {}
+
+        # ==========================
+        # 32 SQUARES
+        # ==========================
+
+        for square in range(1, 33):
+
+            row = square - 1
+
+            ttk.Label(
+                scroll_frame,
+                text=f"Square {square}:",
+                width=12
+            ).grid(
+                row=row,
+                column=0,
+                padx=5,
+                pady=4,
+                sticky="w"
+            )
+
+            entry = ttk.Entry(
+                scroll_frame,
+                width=45
+            )
+
+            entry.grid(
+                row=row,
+                column=1,
+                padx=5,
+                pady=4
+            )
+
+            entry.insert(
+                0,
+                audio_map.get(
+                    str(square),
+                    ""
+                )
+            )
+
+            audio_entries[square] = entry
+
+            ttk.Button(
+                scroll_frame,
+                text="Browse",
+                command=lambda e=entry: self.browse_audio(e)
+            ).grid(
+                row=row,
+                column=2,
+                padx=5,
+                pady=4
+            )
+
+        # ==========================
+        # SAVE BUTTON
+        # ==========================
+
+        ttk.Button(
+            window,
+            text="SAVE AUDIO MAP",
+            command=lambda: self.save_audio_map(
+                audio_entries,
+                window
+            )
+        ).pack(
+            pady=(5, 15)
+        )
+
+    # ==========================
+    # LOAD AUDIO MAP
+    # ==========================
+
+    def load_audio_map(self):
+
+        try:
+
+            with open(
+                self.audio_map_file,
+                "r"
+            ) as file:
+
+                return json.load(file)
+
+        except FileNotFoundError:
+
+            return {}
+
+        except json.JSONDecodeError:
+
+            return {}
+
+    # ==========================
+    # BROWSE AUDIO
+    # ==========================
+
+    def browse_audio(
+        self,
+        entry
+    ):
+
+        filename = filedialog.askopenfilename(
+            title="Select MP3",
+            filetypes=[
+                ("MP3 files", "*.mp3"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if filename:
+
+            entry.delete(
+                0,
+                tk.END
+            )
+
+            entry.insert(
+                0,
+                filename
+            )
+
+    # ==========================
+    # SAVE AUDIO MAP
+    # ==========================
+
+    def save_audio_map(
+        self,
+        entries,
+        window
+    ):
+
+        audio_map = {}
+
+        for square in range(1, 33):
+
+            audio_map[str(square)] = entries[
+                square
+            ].get()
+
+        try:
+
+            with open(
+                self.audio_map_file,
+                "w"
+            ) as file:
+
+                json.dump(
+                    audio_map,
+                    file,
+                    indent=4
+                )
+
+            self.status_label.config(
+                text="Status: Audio map saved"
+            )
+
+            window.destroy()
+
+        except Exception:
+
+            self.status_label.config(
+                text="Status: Could not save audio map"
+            )
+
 
 def main():
 
     root = tk.Tk()
 
-    app = CheckerCycleApp(root)
+    app = CheckerCycleApp(
+        root
+    )
 
     root.mainloop()
 
 
 if __name__ == "__main__":
+
     main()
