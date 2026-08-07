@@ -16,26 +16,24 @@ class MoveEvent:
         end_square,
         captured_squares,
         duration,
-        hold_time
+        hold_time,
+        moving_piece
     ):
 
-        # Original move object
         self.move = move
 
-        # Starting square
         self.start_square = start_square
 
-        # Ending square
         self.end_square = end_square
 
-        # Pieces removed during capture
         self.captured_squares = captured_squares
 
-        # Time used for piece movement animation
         self.duration = duration
 
-        # Time used for studying the new position
         self.hold_time = hold_time
+
+        # Snapshot of piece before board changes
+        self.moving_piece = moving_piece
 
 
 
@@ -48,19 +46,12 @@ class MoveEvent:
             f"Move: {self.start_square}-{self.end_square}"
         )
 
-
         if self.captured_squares:
-
             print(
                 f"Captured: {self.captured_squares}"
             )
-
         else:
-
-            print(
-                "No capture"
-            )
-
+            print("No capture")
 
         print(
             f"Move duration: {self.duration}s"

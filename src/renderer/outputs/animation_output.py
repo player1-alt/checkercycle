@@ -9,7 +9,6 @@ class AnimationOutput:
     audio, and video share the same move data.
     """
 
-
     def __init__(self, image_output=None):
 
         self.square_mapper = SquareMapper()
@@ -17,7 +16,12 @@ class AnimationOutput:
 
 
 
-    def generate_frames(self, start, end, steps=5):
+    def generate_frames(
+        self,
+        start,
+        end,
+        steps=5
+    ):
 
         start_row, start_col = start
         end_row, end_col = end
@@ -30,14 +34,18 @@ class AnimationOutput:
             progress = i / steps
 
 
-            row = start_row + (
-                end_row - start_row
-            ) * progress
+            row = (
+                start_row
+                + (end_row - start_row)
+                * progress
+            )
 
 
-            col = start_col + (
-                end_col - start_col
-            ) * progress
+            col = (
+                start_col
+                + (end_col - start_col)
+                * progress
+            )
 
 
             frames.append(
@@ -52,14 +60,16 @@ class AnimationOutput:
 
 
 
-    def display(self, game_state, event):
+    def display(
+        self,
+        game_state,
+        event
+    ):
 
         print("ANIMATION OUTPUT:")
         print("Animating piece:")
         print()
 
-
-        # Extract the original move from the event
 
         move = event.move
 
@@ -68,32 +78,66 @@ class AnimationOutput:
             f"Path: {move.path}"
         )
 
+
         print()
 
+
+        # =====================================
+        # GET PIECE FROM EVENT SNAPSHOT
+        # =====================================
+
+        moving_piece = event.moving_piece
+
+
+        if moving_piece is None:
+
+            print(
+                "WARNING: No moving piece found"
+            )
+
+            return
+
+
+
+        # =====================================
+        # ANIMATE EACH SEGMENT OF THE MOVE
+        # =====================================
 
         for index in range(
             len(move.path) - 1
         ):
 
 
-            start_square = move.path[index]
-
-            end_square = move.path[index + 1]
-
-
-            start = self.square_mapper.coordinates(
-                start_square
+            start_square = (
+                move.path[index]
             )
 
 
-            end = self.square_mapper.coordinates(
-                end_square
+            end_square = (
+                move.path[index + 1]
             )
+
+
+
+            start = (
+                self.square_mapper.coordinates(
+                    start_square
+                )
+            )
+
+
+            end = (
+                self.square_mapper.coordinates(
+                    end_square
+                )
+            )
+
 
 
             print(
                 f"Moving {start_square} -> {end_square}"
             )
+
 
 
             frames = self.generate_frames(
@@ -102,37 +146,48 @@ class AnimationOutput:
             )
 
 
+
             for number, frame in enumerate(
                 frames,
                 start=1
             ):
+
 
                 print(
                     f"Frame {number}: {frame}"
                 )
 
 
+
                 if self.image_output:
+
 
                     self.image_output.save_animation_frame(
                         game_state,
-                        start_square,
+                        moving_piece,
                         frame
                     )
+
 
 
             print()
 
 
 
-        # Capture information comes from MoveEvent
+        # =====================================
+        # CAPTURE EVENTS
+        # =====================================
 
         if event.captured_squares:
 
-            print("CAPTURE EVENTS:")
+
+            print(
+                "CAPTURE EVENTS:"
+            )
 
 
             for square in event.captured_squares:
+
 
                 print(
                     f"Remove piece from {square}"

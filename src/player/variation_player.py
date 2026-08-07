@@ -15,7 +15,6 @@ class VariationPlayer:
     - Video
     """
 
-
     def __init__(self, game_state, renderer):
 
         self.game_state = game_state
@@ -33,7 +32,6 @@ class VariationPlayer:
         print()
 
 
-
         # Starting board position
 
         self.renderer.render_position(
@@ -41,11 +39,9 @@ class VariationPlayer:
         )
 
 
-
         total_moves = len(
             variation.moves
         )
-
 
 
         print("Initial position hold...")
@@ -59,6 +55,11 @@ class VariationPlayer:
             start=1
         ):
 
+            print(
+                "PLAYING MOVE:",
+                index,
+                move.path
+            )
 
 
             # Time before move
@@ -86,8 +87,20 @@ class VariationPlayer:
             )
 
 
+            # =========================================
+            # SAVE PIECE BEFORE BOARD CHANGES
+            # =========================================
 
-            # Create MoveEvent
+            moving_piece = (
+                self.game_state.pieces.piece_at(
+                    move.path[0]
+                )
+            )
+
+
+            # =========================================
+            # CREATE MOVE EVENT
+            # =========================================
 
             event = MoveEvent(
 
@@ -101,7 +114,9 @@ class VariationPlayer:
 
                 duration,
 
-                hold
+                hold,
+
+                moving_piece
 
             )
 
@@ -120,7 +135,9 @@ class VariationPlayer:
 
 
 
-            # Animation + Audio
+            # =========================================
+            # ANIMATION + AUDIO
+            # =========================================
 
             self.renderer.animate(
                 self.game_state,
@@ -129,7 +146,9 @@ class VariationPlayer:
 
 
 
-            # Apply move
+            # =========================================
+            # APPLY MOVE AFTER ANIMATION
+            # =========================================
 
             self.game_state.apply_move(
                 move
@@ -154,9 +173,13 @@ class VariationPlayer:
 
 
 
-        print("Variation complete.")
+        print(
+            "Variation complete."
+        )
 
-        print("Creating video...")
+        print(
+            "Creating video..."
+        )
 
 
 

@@ -8,7 +8,6 @@ class ImageOutput:
     Creates board images and animation frames.
     """
 
-
     def __init__(self):
 
         self.square_mapper = SquareMapper()
@@ -19,14 +18,12 @@ class ImageOutput:
 
 
         try:
-
             self.font = ImageFont.truetype(
                 "arial.ttf",
                 10
             )
 
         except:
-
             self.font = ImageFont.load_default()
 
 
@@ -44,7 +41,6 @@ class ImageOutput:
     def draw_board(self, draw):
 
         size = 640
-
         square_size = size // 8
 
 
@@ -52,9 +48,7 @@ class ImageOutput:
 
             for column in range(8):
 
-
                 if (row + column) % 2 == 1:
-
 
                     draw.rectangle(
                         [
@@ -71,23 +65,16 @@ class ImageOutput:
     def draw_square_labels(self, draw):
 
         size = 640
-
         square_size = size // 8
-
 
 
         for square in range(1,33):
 
-
-            row,column = (
-                self.square_mapper.coordinates(square)
-            )
+            row,column = self.square_mapper.coordinates(square)
 
 
             x = column * square_size + 3
-
             y = row * square_size + 3
-
 
 
             colour = (
@@ -95,7 +82,6 @@ class ImageOutput:
                 if (row + column) % 2 == 1
                 else "black"
             )
-
 
 
             draw.text(
@@ -117,9 +103,7 @@ class ImageOutput:
     ):
 
         size = 640
-
         square_size = size // 8
-
 
 
         center_x = (
@@ -134,9 +118,7 @@ class ImageOutput:
         )
 
 
-
         radius = square_size // 3
-
 
 
         draw.ellipse(
@@ -151,9 +133,7 @@ class ImageOutput:
         )
 
 
-
         if king:
-
 
             draw.text(
                 (
@@ -173,37 +153,35 @@ class ImageOutput:
         game_state
     ):
 
-
         for square,piece in game_state.pieces.position.items():
 
-
-            if piece:
-
-
-                row,column = (
-                    self.square_mapper.coordinates(square)
-                )
+            if piece is None:
+                continue
 
 
-                colour = (
-                    "red"
-                    if piece.color == "red"
-                    else "white"
-                )
+            row,column = (
+                self.square_mapper.coordinates(square)
+            )
 
 
-                self.draw_piece(
-                    draw,
-                    row,
-                    column,
-                    colour,
-                    piece.king
-                )
+            colour = (
+                "red"
+                if piece.color == "red"
+                else "white"
+            )
+
+
+            self.draw_piece(
+                draw,
+                row,
+                column,
+                colour,
+                piece.king
+            )
 
 
 
     def display(self, game_state):
-
 
         size = 640
 
@@ -218,7 +196,6 @@ class ImageOutput:
         draw = ImageDraw.Draw(image)
 
 
-
         self.draw_board(draw)
 
         self.draw_square_labels(draw)
@@ -229,21 +206,15 @@ class ImageOutput:
         )
 
 
-
         filename = (
             f"frame{self.frame_counter:04}.png"
         )
 
 
-
         image.save(filename)
 
 
-
-        self.saved_frames.append(
-            filename
-        )
-
+        self.saved_frames.append(filename)
 
 
         print(
@@ -263,7 +234,6 @@ class ImageOutput:
         position
     ):
 
-
         size = 640
 
 
@@ -277,54 +247,61 @@ class ImageOutput:
         draw = ImageDraw.Draw(image)
 
 
-
         self.draw_board(draw)
 
         self.draw_square_labels(draw)
 
 
 
-        moving_piece = None
+        # Find moving piece safely
+
+        moving_piece = (
+            game_state.pieces.position.get(
+                moving_square
+            )
+        )
 
 
+
+        # Draw all other pieces
 
         for square,piece in game_state.pieces.position.items():
 
 
             if square == moving_square:
+                continue
 
-                moving_piece = piece
 
+            if piece is None:
                 continue
 
 
 
-            if piece:
+            row,column = (
+                self.square_mapper.coordinates(square)
+            )
 
 
-                row,column = (
-                    self.square_mapper.coordinates(square)
-                )
+            colour = (
+                "red"
+                if piece.color == "red"
+                else "white"
+            )
 
 
-                colour = (
-                    "red"
-                    if piece.color == "red"
-                    else "white"
-                )
-
-
-                self.draw_piece(
-                    draw,
-                    row,
-                    column,
-                    colour,
-                    piece.king
-                )
+            self.draw_piece(
+                draw,
+                row,
+                column,
+                colour,
+                piece.king
+            )
 
 
 
-        if moving_piece:
+        # Draw moving piece
+
+        if moving_piece is not None:
 
 
             row,column = position
@@ -346,15 +323,21 @@ class ImageOutput:
             )
 
 
+        else:
+
+            print(
+                "WARNING: Missing moving piece:",
+                moving_square
+            )
+
+
 
         filename = (
             f"animation{self.frame_counter:04}.png"
         )
 
 
-
         image.save(filename)
-
 
 
         self.saved_frames.append(
