@@ -1,17 +1,14 @@
 {
-    "initial_hold": 5,
+    "initial_hold": 3,
     "final_hold": 5,
-
     "timeline": {
-        "base_interval": 2,
+        "base_interval": 4,
         "start_hold": 3,
         "hold_increase": 2
     },
-
     "audio": {
         "move_hold": 2
     },
-
     "video": {
         "position_hold_frames": 8,
         "final_hold": 5

@@ -1,5 +1,7 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
+import json
+import os
 
 
 class CheckerCycleApp:
@@ -9,10 +11,22 @@ class CheckerCycleApp:
         self.root = root
 
         self.root.title("CheckerCycle Renderer")
-        self.root.geometry("520x500")
+        self.root.geometry("520x650")
         self.root.resizable(False, False)
 
+        # ==========================
+        # SETTINGS FILE
+        # ==========================
+
+        self.settings_file = os.path.join(
+            "config",
+            "settings.json"
+        )
+
         self.create_widgets()
+
+        # Load real settings
+        self.load_settings()
 
     def create_widgets(self):
 
@@ -74,7 +88,8 @@ class CheckerCycleApp:
 
         self.browse_button = ttk.Button(
             game_frame,
-            text="Browse..."
+            text="Browse...",
+            command=self.browse_game
         )
 
         self.browse_button.grid(
@@ -99,38 +114,33 @@ class CheckerCycleApp:
             pady=10
         )
 
-        self.create_setting(
+        self.base_interval = self.create_setting(
             timing_frame,
             "Base interval:",
-            "2.0",
             0
         )
 
-        self.create_setting(
+        self.start_hold = self.create_setting(
             timing_frame,
             "Start hold:",
-            "3.0",
             1
         )
 
-        self.create_setting(
+        self.hold_increase = self.create_setting(
             timing_frame,
             "Hold increase:",
-            "2.0",
             2
         )
 
-        self.create_setting(
+        self.audio_move_hold = self.create_setting(
             timing_frame,
             "Audio move hold:",
-            "2.0",
             3
         )
 
-        self.create_setting(
+        self.final_hold = self.create_setting(
             timing_frame,
             "Final hold:",
-            "5.0",
             4
         )
 
@@ -160,6 +170,20 @@ class CheckerCycleApp:
         )
 
         # ==========================
+        # SAVE SETTINGS
+        # ==========================
+
+        self.save_button = ttk.Button(
+            self.root,
+            text="SAVE SETTINGS",
+            command=self.save_settings
+        )
+
+        self.save_button.pack(
+            pady=(10, 5)
+        )
+
+        # ==========================
         # RENDER
         # ==========================
 
@@ -169,8 +193,12 @@ class CheckerCycleApp:
         )
 
         self.render_button.pack(
-            pady=(15, 5)
+            pady=5
         )
+
+        # ==========================
+        # STATUS
+        # ==========================
 
         self.status_label = ttk.Label(
             self.root,
@@ -185,7 +213,6 @@ class CheckerCycleApp:
         self,
         parent,
         label_text,
-        default_value,
         row
     ):
 
@@ -205,11 +232,6 @@ class CheckerCycleApp:
             width=10
         )
 
-        entry.insert(
-            0,
-            default_value
-        )
-
         entry.grid(
             row=row,
             column=1,
@@ -217,6 +239,246 @@ class CheckerCycleApp:
             padx=10,
             pady=5
         )
+
+        return entry
+
+    # ==========================
+    # BROWSE GAME
+    # ==========================
+
+    def browse_game(self):
+
+        filename = filedialog.askopenfilename(
+            title="Select Checkers Game",
+            filetypes=[
+                ("Text files", "*.txt"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if filename:
+
+            self.game_file.delete(
+                0,
+                tk.END
+            )
+
+            self.game_file.insert(
+                0,
+                filename
+            )
+
+            self.status_label.config(
+                text="Status: Game selected"
+            )
+
+    # ==========================
+    # LOAD SETTINGS
+    # ==========================
+
+    def load_settings(self):
+
+        try:
+
+            with open(
+                self.settings_file,
+                "r"
+            ) as file:
+
+                settings = json.load(file)
+
+            timeline = settings.get(
+                "timeline",
+                {}
+            )
+
+            audio = settings.get(
+                "audio",
+                {}
+
+            )
+
+            video = settings.get(
+                "video",
+                {}
+            )
+
+            self.set_entry(
+                self.base_interval,
+                timeline.get(
+                    "base_interval",
+                    2
+                )
+            )
+
+            self.set_entry(
+                self.start_hold,
+                timeline.get(
+                    "start_hold",
+                    3
+                )
+            )
+
+            self.set_entry(
+                self.hold_increase,
+                timeline.get(
+                    "hold_increase",
+                    2
+                )
+            )
+
+            self.set_entry(
+                self.audio_move_hold,
+                audio.get(
+                    "move_hold",
+                    2
+                )
+            )
+
+            self.set_entry(
+                self.final_hold,
+                video.get(
+                    "final_hold",
+                    settings.get(
+                        "final_hold",
+                        5
+                    )
+                )
+            )
+
+        except FileNotFoundError:
+
+            self.status_label.config(
+                text="Status: Settings file not found"
+            )
+
+        except json.JSONDecodeError:
+
+            self.status_label.config(
+                text="Status: Invalid settings.json"
+            )
+
+        except Exception as error:
+
+            self.status_label.config(
+                text=f"Status: Error loading settings"
+            )
+
+    # ==========================
+    # SET ENTRY VALUE
+    # ==========================
+
+    def set_entry(
+        self,
+        entry,
+        value
+    ):
+
+        entry.delete(
+            0,
+            tk.END
+        )
+
+        entry.insert(
+            0,
+            str(value)
+        )
+
+    # ==========================
+    # SAVE SETTINGS
+    # ==========================
+
+    def save_settings(self):
+
+        try:
+
+            settings = {
+
+                "initial_hold": self.get_number(
+                    self.start_hold
+                ),
+
+                "final_hold": self.get_number(
+                    self.final_hold
+                ),
+
+                "timeline": {
+
+                    "base_interval": self.get_number(
+                        self.base_interval
+                    ),
+
+                    "start_hold": self.get_number(
+                        self.start_hold
+                    ),
+
+                    "hold_increase": self.get_number(
+                        self.hold_increase
+                    )
+                },
+
+                "audio": {
+
+                    "move_hold": self.get_number(
+                        self.audio_move_hold
+                    )
+                },
+
+                "video": {
+
+                    "position_hold_frames": 8,
+
+                    "final_hold": self.get_number(
+                        self.final_hold
+                    )
+                }
+            }
+
+            with open(
+                self.settings_file,
+                "w"
+            ) as file:
+
+                json.dump(
+                    settings,
+                    file,
+                    indent=4
+                )
+
+            self.status_label.config(
+                text="Status: Settings saved"
+            )
+
+        except ValueError:
+
+            self.status_label.config(
+                text="Status: Enter valid numbers"
+            )
+
+        except Exception:
+
+            self.status_label.config(
+                text="Status: Could not save settings"
+            )
+
+    # ==========================
+    # GET NUMBER
+    # ==========================
+
+    def get_number(
+        self,
+        entry
+    ):
+
+        value = float(
+            entry.get()
+        )
+
+        if value.is_integer():
+
+            return int(value)
+
+        return value
 
 
 def main():
