@@ -4,39 +4,224 @@
         "duration": 3.0
     },
     {
+        "path": [],
+        "duration": 4.02
+    },
+    {
+        "path": [],
+        "duration": 4.04
+    },
+    {
+        "path": [],
+        "duration": 4.06
+    },
+    {
+        "path": [],
+        "duration": 4.09
+    },
+    {
         "path": [
             "assets/audio/test.mp3",
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.11
+    },
+    {
+        "path": [],
+        "duration": 4.13
+    },
+    {
+        "path": [],
+        "duration": 4.15
+    },
+    {
+        "path": [
             "assets/audio/test.mp3"
         ],
         "duration": 4.17
     },
     {
+        "path": [],
+        "duration": 4.19
+    },
+    {
         "path": [
+            "C:/Users/Hello/OneDrive/Documents/checkercycle/assets/audio/test.mp3",
+            "assets/audio/test.mp3",
             "assets/audio/test.mp3"
         ],
-        "duration": 4.33
+        "duration": 4.21
     },
     {
         "path": [
             "assets/audio/test.mp3"
         ],
-        "duration": 4.5
-    },
-    {
-        "path": [
-            "assets/audio/test.mp3"
-        ],
-        "duration": 4.67
+        "duration": 4.23
     },
     {
         "path": [],
-        "duration": 4.83
+        "duration": 4.26
+    },
+    {
+        "path": [],
+        "duration": 4.28
+    },
+    {
+        "path": [],
+        "duration": 4.3
+    },
+    {
+        "path": [],
+        "duration": 4.32
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.34
+    },
+    {
+        "path": [],
+        "duration": 4.36
+    },
+    {
+        "path": [],
+        "duration": 4.38
+    },
+    {
+        "path": [],
+        "duration": 4.4
+    },
+    {
+        "path": [
+            "C:/Users/Hello/OneDrive/Documents/checkercycle/assets/audio/test.mp3"
+        ],
+        "duration": 4.43
+    },
+    {
+        "path": [],
+        "duration": 4.45
+    },
+    {
+        "path": [
+            "C:/Users/Hello/OneDrive/Documents/checkercycle/assets/audio/test.mp3",
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.47
+    },
+    {
+        "path": [],
+        "duration": 4.49
+    },
+    {
+        "path": [],
+        "duration": 4.51
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.53
+    },
+    {
+        "path": [],
+        "duration": 4.55
+    },
+    {
+        "path": [],
+        "duration": 4.57
+    },
+    {
+        "path": [],
+        "duration": 4.6
+    },
+    {
+        "path": [],
+        "duration": 4.62
+    },
+    {
+        "path": [],
+        "duration": 4.64
+    },
+    {
+        "path": [],
+        "duration": 4.66
+    },
+    {
+        "path": [],
+        "duration": 4.68
+    },
+    {
+        "path": [],
+        "duration": 4.7
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.72
+    },
+    {
+        "path": [],
+        "duration": 4.74
+    },
+    {
+        "path": [],
+        "duration": 4.77
+    },
+    {
+        "path": [],
+        "duration": 4.79
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.81
     },
     {
         "path": [
             "assets/audio/test.mp3",
             "assets/audio/test.mp3"
         ],
+        "duration": 4.83
+    },
+    {
+        "path": [],
+        "duration": 4.85
+    },
+    {
+        "path": [],
+        "duration": 4.87
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.89
+    },
+    {
+        "path": [],
+        "duration": 4.91
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.94
+    },
+    {
+        "path": [],
+        "duration": 4.96
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.98
+    },
+    {
+        "path": [],
         "duration": 5.0
     }
 ]
