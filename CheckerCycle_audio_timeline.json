@@ -1,0 +1,42 @@
+[
+    {
+        "path": [],
+        "duration": 3.0
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3",
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.17
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.33
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.5
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3"
+        ],
+        "duration": 4.67
+    },
+    {
+        "path": [],
+        "duration": 4.83
+    },
+    {
+        "path": [
+            "assets/audio/test.mp3",
+            "assets/audio/test.mp3"
+        ],
+        "duration": 5.0
+    }
+]

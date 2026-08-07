@@ -1,5 +1,3 @@
-import os
-
 from PIL import Image, ImageDraw, ImageFont
 
 from src.domains.checkers.square_mapper import SquareMapper
@@ -13,9 +11,9 @@ class ImageOutput:
 
     def __init__(self):
 
-        self.frame_counter = 1
-
         self.square_mapper = SquareMapper()
+
+        self.frame_counter = 1
 
         self.saved_frames = []
 
@@ -39,25 +37,7 @@ class ImageOutput:
 
         self.saved_frames = []
 
-
-        for filename in os.listdir("."):
-
-
-            if filename.startswith("frame") and filename.endswith(".png"):
-
-                os.remove(filename)
-
-
-
-            if filename.startswith("animation") and filename.endswith(".png"):
-
-                os.remove(filename)
-
-
-
-        print(
-            "IMAGE OUTPUT RESET"
-        )
+        print("IMAGE OUTPUT RESET")
 
 
 
@@ -83,7 +63,7 @@ class ImageOutput:
                             (column + 1) * square_size,
                             (row + 1) * square_size
                         ],
-                        fill=(80, 80, 80)
+                        fill=(80,80,80)
                     )
 
 
@@ -95,11 +75,12 @@ class ImageOutput:
         square_size = size // 8
 
 
-        for square in range(1, 33):
+
+        for square in range(1,33):
 
 
-            row, column = self.square_mapper.coordinates(
-                square
+            row,column = (
+                self.square_mapper.coordinates(square)
             )
 
 
@@ -108,20 +89,19 @@ class ImageOutput:
             y = row * square_size + 3
 
 
-            if (row + column) % 2 == 1:
 
-                label_colour = "yellow"
-
-            else:
-
-                label_colour = "black"
+            colour = (
+                "yellow"
+                if (row + column) % 2 == 1
+                else "black"
+            )
 
 
 
             draw.text(
-                (x, y),
+                (x,y),
                 str(square),
-                fill=label_colour,
+                fill=colour,
                 font=self.font
             )
 
@@ -141,6 +121,7 @@ class ImageOutput:
         square_size = size // 8
 
 
+
         center_x = (
             column * square_size
             + square_size // 2
@@ -153,15 +134,17 @@ class ImageOutput:
         )
 
 
+
         radius = square_size // 3
+
 
 
         draw.ellipse(
             [
-                center_x - radius,
-                center_y - radius,
-                center_x + radius,
-                center_y + radius
+                center_x-radius,
+                center_y-radius,
+                center_x+radius,
+                center_y+radius
             ],
             fill=colour,
             outline="black"
@@ -171,10 +154,11 @@ class ImageOutput:
 
         if king:
 
+
             draw.text(
                 (
-                    center_x - 8,
-                    center_y - 8
+                    center_x-8,
+                    center_y-8
                 ),
                 "K",
                 fill="gold",
@@ -183,40 +167,21 @@ class ImageOutput:
 
 
 
-    def display(
+    def draw_position(
         self,
+        draw,
         game_state
     ):
 
-        size = 640
 
-
-        image = Image.new(
-            "RGB",
-            (size, size),
-            "white"
-        )
-
-
-        draw = ImageDraw.Draw(
-            image
-        )
-
-
-        self.draw_board(draw)
-
-        self.draw_square_labels(draw)
-
-
-
-        for square, piece in game_state.pieces.position.items():
+        for square,piece in game_state.pieces.position.items():
 
 
             if piece:
 
 
-                row, column = self.square_mapper.coordinates(
-                    square
+                row,column = (
+                    self.square_mapper.coordinates(square)
                 )
 
 
@@ -237,14 +202,159 @@ class ImageOutput:
 
 
 
+    def display(self, game_state):
+
+
+        size = 640
+
+
+        image = Image.new(
+            "RGB",
+            (size,size),
+            "white"
+        )
+
+
+        draw = ImageDraw.Draw(image)
+
+
+
+        self.draw_board(draw)
+
+        self.draw_square_labels(draw)
+
+        self.draw_position(
+            draw,
+            game_state
+        )
+
+
+
         filename = (
             f"frame{self.frame_counter:04}.png"
         )
 
 
-        image.save(
+
+        image.save(filename)
+
+
+
+        self.saved_frames.append(
             filename
         )
+
+
+
+        print(
+            f"IMAGE OUTPUT: Saved {filename}"
+        )
+
+
+        self.frame_counter += 1
+
+
+
+
+    def save_animation_frame(
+        self,
+        game_state,
+        moving_square,
+        position
+    ):
+
+
+        size = 640
+
+
+        image = Image.new(
+            "RGB",
+            (size,size),
+            "white"
+        )
+
+
+        draw = ImageDraw.Draw(image)
+
+
+
+        self.draw_board(draw)
+
+        self.draw_square_labels(draw)
+
+
+
+        moving_piece = None
+
+
+
+        for square,piece in game_state.pieces.position.items():
+
+
+            if square == moving_square:
+
+                moving_piece = piece
+
+                continue
+
+
+
+            if piece:
+
+
+                row,column = (
+                    self.square_mapper.coordinates(square)
+                )
+
+
+                colour = (
+                    "red"
+                    if piece.color == "red"
+                    else "white"
+                )
+
+
+                self.draw_piece(
+                    draw,
+                    row,
+                    column,
+                    colour,
+                    piece.king
+                )
+
+
+
+        if moving_piece:
+
+
+            row,column = position
+
+
+            colour = (
+                "red"
+                if moving_piece.color == "red"
+                else "white"
+            )
+
+
+            self.draw_piece(
+                draw,
+                row,
+                column,
+                colour,
+                moving_piece.king
+            )
+
+
+
+        filename = (
+            f"animation{self.frame_counter:04}.png"
+        )
+
+
+
+        image.save(filename)
+
 
 
         self.saved_frames.append(
@@ -253,7 +363,7 @@ class ImageOutput:
 
 
         print(
-            f"IMAGE OUTPUT: Saved {filename}"
+            f"Saved animation frame {filename}"
         )
 
 

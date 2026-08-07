@@ -2,11 +2,15 @@ from src.domains.checkers.book_parser import CheckersBookParser
 from src.domains.checkers.game_state import GameState
 
 from src.renderer.board_renderer import BoardRenderer
+
 from src.renderer.outputs.image_output import ImageOutput
 from src.renderer.outputs.video_output import VideoOutput
 
 from src.renderer.timeline import Timeline
-from src.renderer.audio.audio_output import AudioOutput
+
+from src.renderer.final_output import FinalOutput
+
+from src.renderer.audio.audio_timeline import AudioTimeline
 
 
 
@@ -28,7 +32,9 @@ class RendererEngine:
 
         self.timeline = Timeline()
 
-        self.audio_output = AudioOutput()
+        self.audio_timeline = AudioTimeline()
+
+        self.final_output = FinalOutput()
 
 
 
@@ -48,10 +54,7 @@ class RendererEngine:
 
 
 
-        with open(
-            game_file,
-            "r"
-        ) as file:
+        with open(game_file, "r") as file:
 
             text = file.read()
 
@@ -61,11 +64,7 @@ class RendererEngine:
         print("Parsing moves...")
 
 
-
-        variation = self.parser.parse_book(
-            text
-        )
-
+        variation = self.parser.parse_book(text)
 
 
         print(
@@ -82,14 +81,12 @@ class RendererEngine:
         game_state = GameState()
 
 
-
         self.image_output.reset()
 
 
 
         print()
-        print("## START POSITION")
-
+        print("START POSITION")
 
 
         self.image_output.display(
@@ -110,8 +107,16 @@ class RendererEngine:
 
 
 
+        move_paths = []
+
+
+
         for move in variation.moves:
 
+
+            move_paths.append(
+                move
+            )
 
 
             game_state.apply_move(
@@ -119,11 +124,9 @@ class RendererEngine:
             )
 
 
-
             self.image_output.display(
                 game_state
             )
-
 
 
             self.board_renderer.render(
@@ -133,18 +136,7 @@ class RendererEngine:
 
 
 
-            # Build audio timeline
-
-            self.audio_output.add_event(
-                move
-            )
-
-
-
-
-
         print()
-
         print("=====================")
         print("FRAME TIMELINE")
         print("=====================")
@@ -154,8 +146,7 @@ class RendererEngine:
         frames = self.image_output.saved_frames
 
 
-
-        video_timeline = []
+        timeline_data = []
 
 
 
@@ -164,15 +155,12 @@ class RendererEngine:
 
             if index == 0:
 
-
                 duration = self.timeline.hold_time(
                     0,
                     total_moves
                 )
 
-
             else:
-
 
                 duration = self.timeline.wait_time(
                     index,
@@ -189,8 +177,7 @@ class RendererEngine:
             )
 
 
-
-            video_timeline.append(
+            timeline_data.append(
                 {
                     "frame": frame,
                     "duration": duration
@@ -199,44 +186,75 @@ class RendererEngine:
 
 
 
-
-
         print()
-
         print("=====================")
-
         print(
             "FRAMES CREATED:",
             len(frames)
         )
-
         print("=====================")
 
 
 
         print()
-
         print("Building MP4...")
-
 
 
         self.video_output.create_video(
             frames,
-            video_timeline
+            timeline_data
         )
 
 
 
         print()
-
         print("Building audio timeline...")
 
 
+        audio_events = []
 
-        self.audio_output.save()
+
+
+        for index, item in enumerate(timeline_data):
+
+
+            path = []
+
+
+            if index > 0 and index-1 < len(move_paths):
+
+
+                move = move_paths[index-1]
+
+
+                if hasattr(move, "path"):
+
+                    path = move.path
+
+
+
+            audio_events.append(
+                {
+                    "path": path,
+                    "duration": item["duration"]
+                }
+            )
+
+
+
+        self.audio_timeline.build(
+            audio_events
+        )
 
 
 
         print()
+        print("Building final video...")
 
+
+        self.final_output.combine()
+
+
+
+        print()
         print("RENDER COMPLETE")
