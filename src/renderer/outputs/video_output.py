@@ -7,49 +7,64 @@ class VideoOutput:
     """
     Creates an MP4 from saved PNG frames.
 
-    Timing controlled by MoveEvents.
-
-    Uses:
-    - animation duration
-    - position hold time
-    - final hold config
+    Timing controlled by timeline durations.
     """
 
 
     def __init__(self):
 
         self.output_name = "CheckerCycle.mp4"
+
+        # Frames per second
         self.fps = 2
 
 
 
     def create_video(
         self,
-        frames,
-        events=None
+        timeline
     ):
 
-        if not frames:
+        if not timeline:
 
-            print("No frames found.")
+            print("No timeline found.")
             return
 
 
 
         print()
-        print("Frames going into video:")
+        print("=====================")
+        print("VIDEO TIMELINE")
+        print("=====================")
 
-        for frame in frames:
 
-            print(frame)
+        for item in timeline:
+
+            print(
+                item["frame"],
+                "->",
+                item["duration"],
+                "seconds"
+            )
+
 
         print()
 
 
 
         first_frame = cv2.imread(
-            frames[0]
+            timeline[0]["frame"]
         )
+
+
+        if first_frame is None:
+
+            print(
+                "Could not load first frame."
+            )
+
+            return
+
 
 
         height, width, _ = first_frame.shape
@@ -60,17 +75,27 @@ class VideoOutput:
 
             self.output_name,
 
-            cv2.VideoWriter_fourcc(*"mp4v"),
+            cv2.VideoWriter_fourcc(
+                *"mp4v"
+            ),
 
             self.fps,
 
-            (width, height)
+            (
+                width,
+                height
+            )
 
         )
 
 
 
-        for frame in frames:
+        for item in timeline:
+
+
+            frame = item["frame"]
+
+            duration = item["duration"]
 
 
             image = cv2.imread(
@@ -78,80 +103,53 @@ class VideoOutput:
             )
 
 
-
-            # Animation frames
-
-            if frame.startswith("animation"):
-
-                video.write(image)
-
-
-
-            # Board positions
-
-            elif frame.startswith("frame"):
-
-
-                hold_seconds = 5
-
-
-                if events:
-
-                    hold_seconds = events[0].hold_time
-
-
-
-                hold_frames = int(
-                    self.fps * hold_seconds
-                )
-
+            if image is None:
 
                 print(
-                    f"Holding board position: {frame} for {hold_seconds}s"
+                    "Skipping missing frame:",
+                    frame
                 )
 
-
-                for _ in range(hold_frames):
-
-                    video.write(image)
+                continue
 
 
 
-        # Final position hold
-
-        final_image = cv2.imread(
-            frames[-1]
-        )
-
-
-        final_hold = SETTINGS["final_hold"]
-
-
-        print()
-
-        print(
-            f"Holding final position for {final_hold} seconds"
-        )
-
-
-        for i in range(
-            self.fps * final_hold
-        ):
-
-            video.write(final_image)
+            frame_count = int(
+                self.fps * duration
+            )
 
 
             print(
-                f"Final hold {i+1}/{self.fps * final_hold}"
+                f"Holding {frame} for {duration}s ({frame_count} frames)"
             )
+
+
+
+            for _ in range(
+                frame_count
+            ):
+
+                video.write(
+                    image
+                )
 
 
 
         video.release()
 
 
+
         print()
 
         print(
-            f"VIDEO OUTPUT: Saved {self.output_name}"
+            "====================="
+        )
+
+        print(
+            "VIDEO OUTPUT:",
+            self.output_name
+        )
+
+        print(
+            "====================="
         )
