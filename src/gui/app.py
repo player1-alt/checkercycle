@@ -477,12 +477,9 @@ class CheckerCycleApp:
 
     def render_game(self):
 
-
         filename = self.game_file.get().strip()
 
-
         if not filename:
-
 
             self.status_label.config(
                 text="Status: Select a game file"
@@ -490,10 +487,7 @@ class CheckerCycleApp:
 
             return
 
-
-
         if not os.path.isfile(filename):
-
 
             self.status_label.config(
                 text="Status: Game file not found"
@@ -501,45 +495,50 @@ class CheckerCycleApp:
 
             return
 
-
-
         self.status_label.config(
             text="Status: Rendering..."
         )
 
-
         self.root.update()
 
+        import threading
 
+        def render_worker():
 
-        try:
+            try:
 
+                engine = RendererEngine()
 
-            engine = RendererEngine()
+                engine.render(
+                    filename
+                )
 
+                self.root.after(
+                    0,
+                    lambda: self.status_label.config(
+                        text="Status: Render complete"
+                    )
+                )
 
-            engine.render(
-                filename
-            )
+            except Exception as e:
 
+                print(
+                    "Render error:",
+                    e
+                )
 
-            self.status_label.config(
-                text="Status: Render complete"
-            )
+                self.root.after(
+                    0,
+                    lambda: self.status_label.config(
+                        text="Status: Render failed"
+                    )
+                )
 
+        threading.Thread(
+            target=render_worker,
+            daemon=True
+        ).start()
 
-        except Exception as e:
-
-
-            print(
-                "Render error:",
-                e
-            )
-
-
-            self.status_label.config(
-                text="Status: Render failed"
-            )
     def open_audio_map(self):
 
 
@@ -818,6 +817,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 

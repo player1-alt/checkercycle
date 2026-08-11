@@ -1,0 +1,395 @@
+
+import os
+import json
+import shutil
+
+from pydub import AudioSegment
+
+
+class AudioTimeline:
+    """
+    Builds the actual CheckerCycle audio timeline.
+
+    For every displayed square:
+
+        10 seconds of that square's MP3
+        3 seconds of silence
+
+    Every MP3 starts from 0:00.
+
+    Example:
+
+        Frame 0 -> square 9
+                   10 sec of song 9
+                   3 sec silence
+
+        Frame 1 -> square 13
+                   10 sec of song 13
+                   3 sec silence
+    """
+
+    def __init__(self):
+
+        self.audio_map_file = "config/audio_map.json"
+
+        self.audio_duration = 10.0
+
+        self.move_pause = 3.0
+
+        self.output_directory = (
+            "CheckerCycle_audio_clips"
+        )
+
+    def build(self, events):
+
+        print()
+        print("Building audio timeline...")
+        print()
+
+        if not os.path.exists(
+            self.audio_map_file
+        ):
+
+            print(
+                "Audio map missing."
+            )
+
+            return []
+
+        with open(
+            self.audio_map_file,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            audio_map = json.load(file)
+
+        # Start with a clean clip directory.
+
+        if os.path.exists(
+            self.output_directory
+        ):
+
+            shutil.rmtree(
+                self.output_directory
+            )
+
+        os.makedirs(
+            self.output_directory,
+            exist_ok=True
+        )
+
+        timeline = []
+
+        clip_number = 0
+
+        for event_index, event in enumerate(events):
+
+            print(
+                f"Audio event {event_index + 1}"
+            )
+
+            print(
+                "----------------"
+            )
+
+            squares = []
+
+            if isinstance(event, dict):
+
+                squares = event.get(
+                    "path",
+                    []
+                )
+
+            elif hasattr(event, "move"):
+
+                squares = event.move.path
+
+            if not squares:
+
+                print(
+                    "No square assigned."
+                )
+
+                # Keep the video synchronized.
+                # One empty 13-second audio clip.
+
+                silence = AudioSegment.silent(
+                    duration=int(
+                        (
+                            self.audio_duration
+                            + self.move_pause
+                        ) * 1000
+                    )
+                )
+
+                clip_number += 1
+
+                clip_path = os.path.join(
+                    self.output_directory,
+                    f"clip_{clip_number:04d}.mp3"
+                )
+
+                silence.export(
+                    clip_path,
+                    format="mp3"
+                )
+
+                timeline.append(
+                    {
+                        "path": [
+                            clip_path
+                        ],
+                        "duration":
+                            self.audio_duration
+                            + self.move_pause
+                    }
+                )
+
+                continue
+
+            # The renderer should normally give us one
+            # square per frame. Use the first square
+            # if more than one is supplied.
+
+            square = squares[0]
+
+            key = str(square)
+
+            print(
+                "Square:",
+                square
+            )
+
+            if key not in audio_map:
+
+                print(
+                    "No song assigned:",
+                    square
+                )
+
+                silence = AudioSegment.silent(
+                    duration=int(
+                        (
+                            self.audio_duration
+                            + self.move_pause
+                        ) * 1000
+                    )
+                )
+
+                clip_number += 1
+
+                clip_path = os.path.join(
+                    self.output_directory,
+                    f"clip_{clip_number:04d}.mp3"
+                )
+
+                silence.export(
+                    clip_path,
+                    format="mp3"
+                )
+
+                timeline.append(
+                    {
+                        "path": [
+                            clip_path
+                        ],
+                        "duration":
+                            self.audio_duration
+                            + self.move_pause
+                    }
+                )
+
+                continue
+
+            audio_file = audio_map[key]
+
+            print(
+                "Song:",
+                audio_file
+            )
+
+            # Audio map entries are relative to
+            # assets/audio.
+
+            filepath = os.path.join(
+                "assets/audio",
+                audio_file
+            )
+
+            if not os.path.exists(filepath):
+
+                print(
+                    "Missing audio:",
+                    filepath
+                )
+
+                silence = AudioSegment.silent(
+                    duration=int(
+                        (
+                            self.audio_duration
+                            + self.move_pause
+                        ) * 1000
+                    )
+                )
+
+                clip_number += 1
+
+                clip_path = os.path.join(
+                    self.output_directory,
+                    f"clip_{clip_number:04d}.mp3"
+                )
+
+                silence.export(
+                    clip_path,
+                    format="mp3"
+                )
+
+                timeline.append(
+                    {
+                        "path": [
+                            clip_path
+                        ],
+                        "duration":
+                            self.audio_duration
+                            + self.move_pause
+                    }
+                )
+
+                continue
+
+            try:
+
+                sound = AudioSegment.from_mp3(
+                    filepath
+                )
+
+                # Always start at 0:00.
+                #
+                # Only the first 10 seconds are used.
+
+                sound = sound[
+                    :int(
+                        self.audio_duration * 1000
+                    )
+                ]
+
+                # If the source MP3 is shorter than
+                # 10 seconds, pad the missing portion
+                # with silence so the video remains
+                # perfectly synchronized.
+
+                required_audio_length = int(
+                    self.audio_duration * 1000
+                )
+
+                if len(sound) < required_audio_length:
+
+                    sound += AudioSegment.silent(
+                        duration=(
+                            required_audio_length
+                            - len(sound)
+                        )
+                    )
+
+                # Add exactly 3 seconds of silence
+                # before the next square.
+
+                sound += AudioSegment.silent(
+                    duration=int(
+                        self.move_pause * 1000
+                    )
+                )
+
+                clip_number += 1
+
+                clip_path = os.path.join(
+                    self.output_directory,
+                    f"clip_{clip_number:04d}.mp3"
+                )
+
+                sound.export(
+                    clip_path,
+                    format="mp3"
+                )
+
+                print(
+                    "Created:",
+                    clip_path
+                )
+
+                timeline.append(
+                    {
+                        "path": [
+                            clip_path
+                        ],
+                        "duration":
+                            self.audio_duration
+                            + self.move_pause
+                    }
+                )
+
+            except Exception as e:
+
+                print(
+                    "Audio processing error:",
+                    e
+                )
+
+                silence = AudioSegment.silent(
+                    duration=int(
+                        (
+                            self.audio_duration
+                            + self.move_pause
+                        ) * 1000
+                    )
+                )
+
+                clip_number += 1
+
+                clip_path = os.path.join(
+                    self.output_directory,
+                    f"clip_{clip_number:04d}.mp3"
+                )
+
+                silence.export(
+                    clip_path,
+                    format="mp3"
+                )
+
+                timeline.append(
+                    {
+                        "path": [
+                            clip_path
+                        ],
+                        "duration":
+                            self.audio_duration
+                            + self.move_pause
+                    }
+                )
+
+        print()
+
+        print(
+            "Audio entries:",
+            len(timeline)
+        )
+
+        with open(
+            "CheckerCycle_audio_timeline.json",
+            "w",
+            encoding="utf-8"
+        ) as file:
+
+            json.dump(
+                timeline,
+                file,
+                indent=4
+            )
+
+        print(
+            "Saved CheckerCycle_audio_timeline.json"
+        )
+
+        return timeline

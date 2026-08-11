@@ -65,7 +65,8 @@ class MP3Builder:
 
         with open(
             self.timeline_file,
-            "r"
+            "r",
+            encoding="utf-8"
         ) as file:
 
             timeline = json.load(file)
@@ -172,11 +173,20 @@ class MP3Builder:
                     "-t",
                     str(duration),
 
+                    "-ar",
+                    "48000",
+
+                    "-ac",
+                    "2",
+
                     "-c:a",
                     "libmp3lame",
 
                     "-b:a",
                     "192k",
+
+                    "-avoid_negative_ts",
+                    "make_zero",
 
                     segment_file
                 ]
@@ -194,10 +204,6 @@ class MP3Builder:
 
             # --------------------------------------------------
             # AUDIO ASSIGNED
-            #
-            # For multiple square assignments inside one
-            # timeline entry, concatenate the assigned songs
-            # and trim the result to this entry duration.
             # --------------------------------------------------
 
             print(
@@ -223,10 +229,15 @@ class MP3Builder:
                     f"[{audio_index}:a]"
                 )
 
+            # --------------------------------------------------
+            # ONE AUDIO FILE
+            # --------------------------------------------------
+
             if len(valid_paths) == 1:
 
                 filter_complex = (
                     "[0:a]"
+                    "aresample=48000,"
                     "atrim=0:"
                     + str(duration)
                     + ","
@@ -237,6 +248,10 @@ class MP3Builder:
                     + "[a]"
                 )
 
+            # --------------------------------------------------
+            # MULTIPLE AUDIO FILES
+            # --------------------------------------------------
+
             else:
 
                 concat_inputs = "".join(
@@ -246,6 +261,7 @@ class MP3Builder:
                 filter_complex = (
                     concat_inputs
                     + f"concat=n={len(valid_paths)}:v=0:a=1,"
+                    + "aresample=48000,"
                     + f"atrim=0:{duration},"
                     + "asetpts=N/SR/TB,"
                     + "apad,"
@@ -266,19 +282,43 @@ class MP3Builder:
                 "-map",
                 "[a]",
 
+                "-ar",
+                "48000",
+
+                "-ac",
+                "2",
+
                 "-c:a",
                 "libmp3lame",
 
                 "-b:a",
                 "192k",
 
+                "-avoid_negative_ts",
+                "make_zero",
+
                 segment_file
             ]
 
-            subprocess.run(
-                command,
-                check=True
-            )
+            try:
+
+                subprocess.run(
+                    command,
+                    check=True
+                )
+
+            except subprocess.CalledProcessError:
+
+                print()
+                print(
+                    "ERROR: Could not build audio segment:"
+                )
+                print(
+                    valid_paths
+                )
+                print()
+
+                return False
 
             segment_files.append(
                 segment_file
@@ -300,12 +340,14 @@ class MP3Builder:
                     segment
                 )
 
+                absolute_path = absolute_path.replace(
+                    "\\",
+                    "/"
+                )
+
                 file.write(
                     "file '"
-                    + absolute_path.replace(
-                        "\\",
-                        "/"
-                    )
+                    + absolute_path
                     + "'\n"
                 )
 
@@ -333,19 +375,43 @@ class MP3Builder:
             "-i",
             self.audio_list_file,
 
+            "-af",
+            "aresample=48000,asetpts=N/SR/TB",
+
+            "-ar",
+            "48000",
+
+            "-ac",
+            "2",
+
             "-c:a",
             "libmp3lame",
 
             "-b:a",
             "192k",
 
+            "-avoid_negative_ts",
+            "make_zero",
+
             self.output_file
         ]
 
-        subprocess.run(
-            command,
-            check=True
-        )
+        try:
+
+            subprocess.run(
+                command,
+                check=True
+            )
+
+        except subprocess.CalledProcessError:
+
+            print()
+            print(
+                "ERROR: Could not join audio segments."
+            )
+            print()
+
+            return False
 
         # ------------------------------------------------------
         # CLEANUP
@@ -396,3 +462,4 @@ class MP3Builder:
         print()
 
         return True
+

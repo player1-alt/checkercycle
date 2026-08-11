@@ -1,0 +1,386 @@
+
+import os
+import json
+import shutil
+
+from pydub import AudioSegment
+
+from src.renderer.settings import SETTINGS
+
+
+class AudioTimeline:
+    """
+    Builds the actual CheckerCycle audio timeline.
+
+    For every displayed square:
+
+        10 seconds of that square's MP3
+        3 seconds of silence
+
+    Timing comes from config/settings.json.
+
+    Every MP3 starts from 0:00.
+    """
+
+    def __init__(self):
+
+        self.audio_map_file = "config/audio_map.json"
+
+        self.audio_duration = (
+            SETTINGS["audio"]["square_duration"]
+        )
+
+        self.move_pause = (
+            SETTINGS["audio"]["move_pause"]
+        )
+
+        self.output_directory = (
+            "CheckerCycle_audio_clips"
+        )
+
+
+    def build(self, events):
+
+        print()
+        print("Building audio timeline...")
+        print()
+
+        if not os.path.exists(
+            self.audio_map_file
+        ):
+
+            print(
+                "Audio map missing."
+            )
+
+            return []
+
+
+        with open(
+            self.audio_map_file,
+            "r",
+            encoding="utf-8"
+        ) as file:
+
+            audio_map = json.load(file)
+
+
+        print(
+            f"Audio duration: "
+            f"{self.audio_duration}s"
+        )
+
+        print(
+            f"Move pause: "
+            f"{self.move_pause}s"
+        )
+
+        print(
+            f"Square cycle: "
+            f"{self.audio_duration + self.move_pause}s"
+        )
+
+        print()
+
+
+        # Start with a clean clip directory.
+
+        if os.path.exists(
+            self.output_directory
+        ):
+
+            shutil.rmtree(
+                self.output_directory
+            )
+
+
+        os.makedirs(
+            self.output_directory,
+            exist_ok=True
+        )
+
+
+        timeline = []
+
+        clip_number = 0
+
+
+        for event_index, event in enumerate(events):
+
+            print(
+                f"Audio event {event_index + 1}"
+            )
+
+            print(
+                "----------------"
+            )
+
+
+            squares = []
+
+
+            if isinstance(event, dict):
+
+                squares = event.get(
+                    "path",
+                    []
+                )
+
+
+            elif hasattr(event, "move"):
+
+                squares = event.move.path
+
+
+            if not squares:
+
+                print(
+                    "No square assigned."
+                )
+
+
+                self._create_silence_clip(
+                    timeline
+                )
+
+                clip_number += 1
+
+                continue
+
+
+            # Normally there is exactly one square
+            # for each displayed frame.
+
+            square = squares[0]
+
+            key = str(square)
+
+
+            print(
+                "Square:",
+                square
+            )
+
+
+            if key not in audio_map:
+
+                print(
+                    "No song assigned:",
+                    square
+                )
+
+
+                self._create_silence_clip(
+                    timeline
+                )
+
+                clip_number += 1
+
+                continue
+
+
+            audio_file = audio_map[key]
+
+
+            print(
+                "Song:",
+                audio_file
+            )
+
+
+            filepath = os.path.join(
+                "assets/audio",
+                audio_file
+            )
+
+
+            if not os.path.exists(
+                filepath
+            ):
+
+                print(
+                    "Missing audio:",
+                    filepath
+                )
+
+
+                self._create_silence_clip(
+                    timeline
+                )
+
+                clip_number += 1
+
+                continue
+
+
+            try:
+
+                sound = AudioSegment.from_mp3(
+                    filepath
+                )
+
+
+                # ALWAYS start from 0:00.
+                #
+                # Take exactly the configured
+                # number of seconds.
+
+                required_audio_length = int(
+                    self.audio_duration * 1000
+                )
+
+
+                sound = sound[
+                    :required_audio_length
+                ]
+
+
+                # If the MP3 is shorter than the
+                # requested duration, pad it.
+
+                if len(sound) < required_audio_length:
+
+                    sound += AudioSegment.silent(
+                        duration=(
+                            required_audio_length
+                            - len(sound)
+                        )
+                    )
+
+
+                # Add the exact pause after the
+                # audio.
+
+                sound += AudioSegment.silent(
+                    duration=int(
+                        self.move_pause * 1000
+                    )
+                )
+
+
+                clip_number += 1
+
+
+                clip_path = os.path.join(
+                    self.output_directory,
+                    f"clip_{clip_number:04d}.mp3"
+                )
+
+
+                sound.export(
+                    clip_path,
+                    format="mp3"
+                )
+
+
+                print(
+                    "Created:",
+                    clip_path
+                )
+
+
+                timeline.append(
+                    {
+                        "path": [
+                            clip_path
+                        ],
+                        "duration":
+                            self.audio_duration
+                            + self.move_pause
+                    }
+                )
+
+
+            except Exception as e:
+
+                print(
+                    "Audio processing error:",
+                    e
+                )
+
+
+                self._create_silence_clip(
+                    timeline
+                )
+
+
+        print()
+
+        print(
+            "Audio entries:",
+            len(timeline)
+        )
+
+
+        with open(
+            "CheckerCycle_audio_timeline.json",
+            "w",
+            encoding="utf-8"
+        ) as file:
+
+            json.dump(
+                timeline,
+                file,
+                indent=4
+            )
+
+
+        print(
+            "Saved CheckerCycle_audio_timeline.json"
+        )
+
+
+        return timeline
+
+
+    def _create_silence_clip(
+        self,
+        timeline
+    ):
+
+        total_duration = (
+            self.audio_duration
+            +
+            self.move_pause
+        )
+
+
+        silence = AudioSegment.silent(
+            duration=int(
+                total_duration * 1000
+            )
+        )
+
+
+        clip_number = (
+            len(timeline) + 1
+        )
+
+
+        clip_path = os.path.join(
+            self.output_directory,
+            f"clip_{clip_number:04d}.mp3"
+        )
+
+
+        silence.export(
+            clip_path,
+            format="mp3"
+        )
+
+
+        timeline.append(
+            {
+                "path": [
+                    clip_path
+                ],
+                "duration":
+                    total_duration
+            }
+        )
+
+
+        print(
+            "Created silent clip:",
+            clip_path
+        )

@@ -22,16 +22,12 @@ class FinalOutput:
         # Use Python's bundled FFmpeg
         self.ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
 
-
-
     def combine(self):
 
         print()
         print("=====================")
         print("FINAL OUTPUT ENGINE")
         print("=====================")
-
-
 
         if not os.path.exists(self.video_file):
 
@@ -42,8 +38,6 @@ class FinalOutput:
 
             return
 
-
-
         if not os.path.exists(self.timeline_file):
 
             print(
@@ -53,20 +47,16 @@ class FinalOutput:
 
             return
 
-
-
+        # Read timeline using UTF-8
         with open(
             self.timeline_file,
-            "r"
+            "r",
+            encoding="utf-8"
         ) as file:
 
             timeline = json.load(file)
 
-
-
         audio_files = []
-
-
 
         for item in timeline:
 
@@ -75,14 +65,11 @@ class FinalOutput:
                 []
             )
 
-
             for path in paths:
 
                 if path and os.path.exists(path):
 
                     audio_files.append(path)
-
-
 
         print()
 
@@ -90,8 +77,6 @@ class FinalOutput:
             "Audio clips found:",
             len(audio_files)
         )
-
-
 
         if not audio_files:
 
@@ -101,8 +86,6 @@ class FinalOutput:
 
             return
 
-
-
         print()
 
         for audio in audio_files:
@@ -111,35 +94,42 @@ class FinalOutput:
                 audio
             )
 
-
-
         #
         # Create FFmpeg audio concat file
+        #
+        # IMPORTANT:
+        # UTF-8 is required because some audio filenames
+        # contain Japanese/Unicode characters.
         #
 
         with open(
             "audio_list.txt",
-            "w"
+            "w",
+            encoding="utf-8"
         ) as file:
-
 
             for audio in audio_files:
 
-                file.write(
-                    "file '{}'\n".format(
-                        os.path.abspath(audio)
-                    )
+                absolute_path = os.path.abspath(audio)
+
+                # FFmpeg concat files use single quotes.
+                # Escape single quotes in Windows paths if needed.
+                safe_path = absolute_path.replace(
+                    "'",
+                    "'\\''"
                 )
 
-
+                file.write(
+                    "file '{}'\n".format(
+                        safe_path
+                    )
+                )
 
         print()
 
         print(
             "Building audio track..."
         )
-
-
 
         subprocess.run(
             [
@@ -165,15 +155,11 @@ class FinalOutput:
             check=True
         )
 
-
-
         print()
 
         print(
             "Combining video + audio..."
         )
-
-
 
         subprocess.run(
             [
@@ -201,11 +187,10 @@ class FinalOutput:
             check=True
         )
 
-
-
         print()
 
         print(
             "FINAL VIDEO CREATED:",
             self.output_file
         )
+

@@ -1,12 +1,12 @@
+
 class MoveEvent:
     """
     Represents everything that happens during one checker move.
 
-    Communication layer between:
-    - Animation
-    - Audio
-    - Timing
-    - Video
+    Timing for each square:
+    - audio_duration = 10 seconds
+    - move_pause = 3 seconds
+    - total_duration = 13 seconds
     """
 
     def __init__(
@@ -15,8 +15,8 @@ class MoveEvent:
         start_square,
         end_square,
         captured_squares,
-        duration,
-        hold_time,
+        audio_duration,
+        move_pause,
         moving_piece
     ):
 
@@ -28,14 +28,17 @@ class MoveEvent:
 
         self.captured_squares = captured_squares
 
-        self.duration = duration
+        self.audio_duration = audio_duration
 
-        self.hold_time = hold_time
+        self.move_pause = move_pause
+
+        self.total_duration = (
+            audio_duration
+            + move_pause
+        )
 
         # Snapshot of piece before board changes
         self.moving_piece = moving_piece
-
-
 
     def describe(self):
 
@@ -54,9 +57,13 @@ class MoveEvent:
             print("No capture")
 
         print(
-            f"Move duration: {self.duration}s"
+            f"Audio duration: {self.audio_duration}s"
         )
 
         print(
-            f"Study hold: {self.hold_time}s"
+            f"Move pause: {self.move_pause}s"
+        )
+
+        print(
+            f"Total square duration: {self.total_duration}s"
         )

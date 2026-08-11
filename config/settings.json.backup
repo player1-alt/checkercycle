@@ -1,0 +1,13 @@
+{
+    "timeline": {
+        "base_interval": 5,
+        "start_hold": 5,
+        "hold_increase": 5
+    },
+    "audio": {
+        "move_hold": 5
+    },
+    "video": {
+        "final_hold": 5
+    }
+}

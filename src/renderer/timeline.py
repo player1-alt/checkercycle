@@ -1,58 +1,48 @@
+
 from src.renderer.settings import SETTINGS
 
 
 class Timeline:
     """
-    Controls timing for replay, animation, and audio.
-    """
+    Controls the fixed CheckerCycle timing.
 
+    Each square receives:
+    - 10 seconds of audio
+    - 3 seconds of silence
+
+    Total cycle per square = 13 seconds.
+    """
 
     def __init__(self):
 
-        self.base_interval = SETTINGS["timeline"]["base_interval"]
-        self.start_hold = SETTINGS["timeline"]["start_hold"]
-        self.hold_increase = SETTINGS["timeline"]["hold_increase"]
+        self.audio_duration = SETTINGS["audio"]["square_duration"]
+        self.move_pause = SETTINGS["audio"]["move_pause"]
 
-
-
-    def move_duration(self, move_number, total_moves):
-        """
-        Calculates how long a move sequence takes.
-
-        Time gradually increases as the variation progresses.
-        """
-
-        progress = move_number / max(total_moves, 1)
-
-        duration = self.base_interval + progress
-
-        return round(duration, 2)
-
-
-
-    def wait_time(self, move_number, total_moves):
-        """
-        Returns pause duration after a move.
-        """
-
-        return self.move_duration(
-            move_number,
-            total_moves
+        self.square_cycle = (
+            self.audio_duration
+            + self.move_pause
         )
 
-
-
-    def hold_time(self, move_number, total_moves):
+    def audio_time(self):
         """
-        Returns pause duration before a move.
-
-        Gets longer as the variation progresses.
+        How long the MP3 for a square plays.
         """
 
-        progress = move_number / max(total_moves, 1)
+        return self.audio_duration
 
-        hold = self.start_hold + (
-            progress * self.hold_increase
-        )
+    def pause_time(self):
+        """
+        How long the board waits after the MP3
+        before the piece moves.
+        """
 
-        return round(hold, 2)
+        return self.move_pause
+
+    def square_duration(self):
+        """
+        Total time occupied by one square:
+
+        audio + pause
+        """
+
+        return self.square_cycle
