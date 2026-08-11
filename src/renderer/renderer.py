@@ -1,6 +1,5 @@
 from src.renderer.outputs.text_output import TextOutput
 from src.renderer.outputs.animation_output import AnimationOutput
-from src.renderer.outputs.audio_output import AudioOutput
 from src.renderer.outputs.image_output import ImageOutput
 from src.renderer.outputs.video_output import VideoOutput
 
@@ -11,10 +10,8 @@ class Renderer:
 
     Receives MoveEvents and sends them to:
     - Animation
-    - Audio
     - Video
     """
-
 
     def __init__(self):
 
@@ -26,61 +23,47 @@ class Renderer:
             self.image_output
         )
 
-        self.audio_output = AudioOutput()
-
         self.video_output = VideoOutput()
 
-
-
-    def render_position(self, game_state):
+    def render_position(
+        self,
+        game_state
+    ):
 
         if game_state is None:
             return
-
 
         print("====================================")
         print("BOARD POSITION")
         print()
 
-
         self.text_output.display(
             game_state
         )
 
-
         print()
-
 
         self.image_output.display(
             game_state
         )
 
-
         print()
 
-
-
-    def animate(self, game_state, event):
+    def animate(
+        self,
+        game_state,
+        event
+    ):
 
         if game_state is None:
             return
 
-
         print("ANIMATION")
         print()
-
-
-        # Send MoveEvent
 
         self.animation_output.display(
             game_state,
             event
         )
 
-
         print()
-
-
-        self.audio_output.display(
-            event
-        )

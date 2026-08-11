@@ -1,7 +1,5 @@
 import cv2
 
-from src.renderer.settings import SETTINGS
-
 
 class VideoOutput:
 
@@ -11,6 +9,8 @@ class VideoOutput:
 
         self.fps = 2
 
+        # Every position occupies exactly 13 seconds.
+        self.move_interval = 13.0
 
     def create_video(
         self,
@@ -26,13 +26,13 @@ class VideoOutput:
 
             return
 
-
         first_frame = cv2.imread(
             frames[0]
         )
 
-        height, width, _ = first_frame.shape
-
+        height, width, _ = (
+            first_frame.shape
+        )
 
         video = cv2.VideoWriter(
 
@@ -45,96 +45,67 @@ class VideoOutput:
             self.fps,
 
             (width, height)
-
         )
-
 
         print()
         print("=====================")
         print("VIDEO TIMELINE")
         print("=====================")
 
+        # ---------------------------------------------
+        # STARTING POSITION
+        # ---------------------------------------------
 
-        for index, frame in enumerate(frames):
+        initial_image = cv2.imread(
+            frames[0]
+        )
+
+        hold_frames = int(
+            self.fps * self.move_interval
+        )
+
+        print(
+            f"Starting position -> "
+            f"{self.move_interval}s "
+            f"({hold_frames} frames)"
+        )
+
+        for _ in range(hold_frames):
+
+            video.write(
+                initial_image
+            )
+
+        # ---------------------------------------------
+        # EVERY MOVE POSITION
+        # ---------------------------------------------
+
+        for index, frame in enumerate(
+            frames[1:],
+            start=1
+        ):
 
             image = cv2.imread(
                 frame
             )
 
-            hold_seconds = 13.0
-
-
-            if events and index < len(events):
-
-                hold_seconds = events[index]["duration"]
-
-
             print(
-                f"{frame} -> {hold_seconds}s"
-            )
-
-
-            hold_frames = int(
-                self.fps * hold_seconds
-            )
-
-
-            print(
-                f"Holding {frame} for "
-                f"{hold_seconds}s "
+                f"Move {index} -> "
+                f"{self.move_interval}s "
                 f"({hold_frames} frames)"
             )
 
-
-            for _ in range(
-                hold_frames
-            ):
+            for _ in range(hold_frames):
 
                 video.write(
                     image
                 )
 
-
-        # Final position hold.
-
-        final_hold = SETTINGS.get(
-            "video",
-            {}
-        ).get(
-            "final_hold",
-            5.0
-        )
-
-
-        final_image = cv2.imread(
-            frames[-1]
-        )
-
-
-        print()
-
-        print(
-            f"Holding final position for "
-            f"{final_hold} seconds"
-        )
-
-
-        final_hold_frames = int(
-            self.fps * final_hold
-        )
-
-
-        for _ in range(
-            final_hold_frames
-        ):
-
-            video.write(
-                final_image
-            )
-
+        # ---------------------------------------------
+        # FINAL POSITION
+        # ---------------------------------------------
 
         video.release()
-
 
         print()
 

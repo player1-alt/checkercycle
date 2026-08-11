@@ -1,3 +1,4 @@
+
 import os
 import json
 import shutil
@@ -17,6 +18,18 @@ class AudioTimeline:
         3 seconds of silence
 
     Every MP3 starts from 0:00.
+
+    IMPORTANT:
+    Every square in a move path gets its own audio clip.
+
+    Example:
+
+        9-13
+
+    becomes:
+
+        square 9  -> 10s audio + 3s silence
+        square 13 -> 10s audio + 3s silence
     """
 
     def __init__(self):
@@ -39,7 +52,6 @@ class AudioTimeline:
             imageio_ffmpeg.get_ffmpeg_exe()
         )
 
-
     def build(self, events):
 
         print()
@@ -61,7 +73,6 @@ class AudioTimeline:
 
         print()
 
-
         if not os.path.exists(
             self.audio_map_file
         ):
@@ -69,7 +80,6 @@ class AudioTimeline:
             print("Audio map missing.")
 
             return []
-
 
         with open(
             self.audio_map_file,
@@ -79,8 +89,9 @@ class AudioTimeline:
 
             audio_map = json.load(file)
 
-
-        # Clean old clips.
+        # -------------------------------------------------
+        # Clean old clips
+        # -------------------------------------------------
 
         if os.path.exists(
             self.output_directory
@@ -102,15 +113,18 @@ class AudioTimeline:
 
                 return []
 
-
         os.makedirs(
             self.output_directory,
             exist_ok=True
         )
 
+        # -------------------------------------------------
+        # Build timeline
+        # -------------------------------------------------
 
         timeline = []
 
+        clip_number = 0
 
         for event_index, event in enumerate(events):
 
@@ -120,6 +134,9 @@ class AudioTimeline:
 
             squares = []
 
+            # -------------------------------------------------
+            # Get move path
+            # -------------------------------------------------
 
             if isinstance(event, dict):
 
@@ -132,6 +149,9 @@ class AudioTimeline:
 
                 squares = event.move.path
 
+            # -------------------------------------------------
+            # No path
+            # -------------------------------------------------
 
             if not squares:
 
@@ -139,9 +159,11 @@ class AudioTimeline:
                     "No square assigned."
                 )
 
+                clip_number += 1
+
                 clip_path = (
-                    self._create_silence_clip(
-                        event_index + 1
+                    self._create_silence_clip_at_number(
+                        clip_number
                     )
                 )
 
@@ -156,146 +178,155 @@ class AudioTimeline:
 
                 continue
 
+            # -------------------------------------------------
+            # IMPORTANT:
+            #
+            # Process EVERY square in the move path.
+            #
+            # 9-13
+            #
+            # path = [9, 13]
+            #
+            # Both squares get audio.
+            # -------------------------------------------------
 
-            square = squares[0]
-
-            key = str(square)
-
-
-            print(
-                "Square:",
-                square
-            )
-
-
-            if key not in audio_map:
+            for square in squares:
 
                 print(
-                    "No song assigned:",
+                    "Square:",
                     square
                 )
 
-                clip_path = (
-                    self._create_silence_clip(
-                        event_index + 1
-                    )
-                )
+                key = str(square)
 
-                timeline.append(
-                    {
-                        "path": [clip_path],
-                        "duration":
-                            self.audio_duration
-                            + self.move_pause
-                    }
-                )
+                clip_number += 1
 
-                continue
-
-
-            audio_file = audio_map[key]
-
-            filepath = os.path.join(
-                "assets/audio",
-                audio_file
-            )
-
-
-            print(
-                "Song:",
-                audio_file
-            )
-
-
-            if not os.path.exists(filepath):
-
-                print(
-                    "Missing audio:",
-                    filepath
-                )
-
-                clip_path = (
-                    self._create_silence_clip(
-                        event_index + 1
-                    )
-                )
-
-                timeline.append(
-                    {
-                        "path": [clip_path],
-                        "duration":
-                            self.audio_duration
-                            + self.move_pause
-                    }
-                )
-
-                continue
-
-
-            clip_number = event_index + 1
-
-            clip_path = os.path.join(
-                self.output_directory,
-                f"clip_{clip_number:04d}.mp3"
-            )
-
-
-            try:
-
-                self._create_audio_clip(
-                    filepath,
-                    clip_path
-                )
-
-
-                print(
-                    "Created:",
-                    clip_path
-                )
-
-
-                timeline.append(
-                    {
-                        "path": [clip_path],
-                        "duration":
-                            self.audio_duration
-                            + self.move_pause
-                    }
-                )
-
-
-            except Exception as e:
-
-                print(
-                    "FFmpeg audio error:",
-                    e
-                )
-
-
-                # Create silence with a DIFFERENT
-                # filename so we never reuse a
-                # potentially locked file.
-
-                fallback_path = os.path.join(
+                clip_path = os.path.join(
                     self.output_directory,
-                    f"silence_{clip_number:04d}.mp3"
+                    f"clip_{clip_number:04d}.mp3"
                 )
 
+                # -------------------------------------------------
+                # No audio assigned to square
+                # -------------------------------------------------
 
-                self._create_silence_clip_at(
-                    fallback_path
+                if key not in audio_map:
+
+                    print(
+                        "No song assigned:",
+                        square
+                    )
+
+                    self._create_silence_clip_at(
+                        clip_path
+                    )
+
+                    timeline.append(
+                        {
+                            "path": [clip_path],
+                            "duration":
+                                self.audio_duration
+                                + self.move_pause
+                        }
+                    )
+
+                    continue
+
+                # -------------------------------------------------
+                # Audio file
+                # -------------------------------------------------
+
+                audio_file = audio_map[key]
+
+                filepath = os.path.join(
+                    "assets/audio",
+                    audio_file
                 )
 
-
-                timeline.append(
-                    {
-                        "path": [fallback_path],
-                        "duration":
-                            self.audio_duration
-                            + self.move_pause
-                    }
+                print(
+                    "Song:",
+                    audio_file
                 )
 
+                # -------------------------------------------------
+                # Missing audio file
+                # -------------------------------------------------
+
+                if not os.path.exists(filepath):
+
+                    print(
+                        "Missing audio:",
+                        filepath
+                    )
+
+                    self._create_silence_clip_at(
+                        clip_path
+                    )
+
+                    timeline.append(
+                        {
+                            "path": [clip_path],
+                            "duration":
+                                self.audio_duration
+                                + self.move_pause
+                        }
+                    )
+
+                    continue
+
+                # -------------------------------------------------
+                # Create audio clip
+                # -------------------------------------------------
+
+                try:
+
+                    self._create_audio_clip(
+                        filepath,
+                        clip_path
+                    )
+
+                    print(
+                        "Created:",
+                        clip_path
+                    )
+
+                    timeline.append(
+                        {
+                            "path": [clip_path],
+                            "duration":
+                                self.audio_duration
+                                + self.move_pause
+                        }
+                    )
+
+                except Exception as e:
+
+                    print(
+                        "FFmpeg audio error:",
+                        e
+                    )
+
+                    fallback_path = os.path.join(
+                        self.output_directory,
+                        f"silence_{clip_number:04d}.mp3"
+                    )
+
+                    self._create_silence_clip_at(
+                        fallback_path
+                    )
+
+                    timeline.append(
+                        {
+                            "path": [fallback_path],
+                            "duration":
+                                self.audio_duration
+                                + self.move_pause
+                        }
+                    )
+
+        # -------------------------------------------------
+        # Finished
+        # -------------------------------------------------
 
         print()
 
@@ -303,7 +334,6 @@ class AudioTimeline:
             "Audio entries:",
             len(timeline)
         )
-
 
         with open(
             "CheckerCycle_audio_timeline.json",
@@ -317,14 +347,15 @@ class AudioTimeline:
                 indent=4
             )
 
-
         print(
             "Saved CheckerCycle_audio_timeline.json"
         )
 
-
         return timeline
 
+    # =========================================================
+    # CREATE AUDIO CLIP
+    # =========================================================
 
     def _create_audio_clip(
         self,
@@ -344,15 +375,16 @@ class AudioTimeline:
             ) * 1000
         )
 
-
+        # -------------------------------------------------
         # FFmpeg:
         #
-        # - start at 0:00
-        # - take exactly audio_duration
-        # - pad if necessary
-        # - output exactly total duration
+        # Start at 0:00
+        # Take exactly audio_duration
+        # Pad if necessary
+        # Output exactly total duration
         #
-        # The final portion is silence.
+        # Final portion is silence.
+        # -------------------------------------------------
 
         subprocess.run(
             [
@@ -391,6 +423,9 @@ class AudioTimeline:
             stderr=subprocess.PIPE
         )
 
+    # =========================================================
+    # CREATE SILENCE CLIP
+    # =========================================================
 
     def _create_silence_clip(
         self,
@@ -413,6 +448,34 @@ class AudioTimeline:
 
         return clip_path
 
+    # =========================================================
+    # CREATE NUMBERED SILENCE CLIP
+    # =========================================================
+
+    def _create_silence_clip_at_number(
+        self,
+        clip_number
+    ):
+
+        clip_path = os.path.join(
+            self.output_directory,
+            f"silence_{clip_number:04d}.mp3"
+        )
+
+        self._create_silence_clip_at(
+            clip_path
+        )
+
+        print(
+            "Created silent clip:",
+            clip_path
+        )
+
+        return clip_path
+
+    # =========================================================
+    # CREATE SILENCE AT SPECIFIC PATH
+    # =========================================================
 
     def _create_silence_clip_at(
         self,
@@ -423,7 +486,6 @@ class AudioTimeline:
             self.audio_duration
             + self.move_pause
         )
-
 
         subprocess.run(
             [

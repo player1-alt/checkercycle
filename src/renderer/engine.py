@@ -1,4 +1,3 @@
-
 from src.domains.checkers.book_parser import CheckersBookParser
 from src.domains.checkers.game_state import GameState
 
@@ -8,10 +7,6 @@ from src.renderer.outputs.image_output import ImageOutput
 from src.renderer.outputs.video_output import VideoOutput
 
 from src.renderer.timeline import Timeline
-
-from src.renderer.final_output import FinalOutput
-
-from src.renderer.audio.audio_timeline import AudioTimeline
 
 
 class RendererEngine:
@@ -29,11 +24,6 @@ class RendererEngine:
         self.video_output = VideoOutput()
 
         self.timeline = Timeline()
-
-        self.audio_timeline = AudioTimeline()
-
-        self.final_output = FinalOutput()
-
 
     def render(self, game_file):
 
@@ -56,7 +46,9 @@ class RendererEngine:
         print()
         print("Parsing moves...")
 
-        variation = self.parser.parse_book(text)
+        variation = self.parser.parse_book(
+            text
+        )
 
         print(
             "Moves loaded:",
@@ -82,13 +74,11 @@ class RendererEngine:
             game_state.pieces
         )
 
-        move_paths = []
+        # ---------------------------------------------
+        # PLAY EVERY MOVE AND SAVE RESULTING POSITIONS
+        # ---------------------------------------------
 
         for move in variation.moves:
-
-            move_paths.append(
-                move
-            )
 
             game_state.apply_move(
                 move
@@ -103,157 +93,52 @@ class RendererEngine:
                 game_state.pieces
             )
 
+        # ---------------------------------------------
+        # FRAME TIMELINE
+        # ---------------------------------------------
+
         print()
         print("=====================")
         print("FRAME TIMELINE")
         print("=====================")
 
-        frames = self.image_output.saved_frames
+        frames = (
+            self.image_output.saved_frames
+        )
 
-        timeline_data = []
+        frame_duration = 13.0
 
-        frame_duration = self.timeline.square_duration()
-
-        for index, frame in enumerate(frames):
-
-            duration = frame_duration
+        for frame in frames:
 
             print(
                 frame,
                 "->",
-                duration,
+                frame_duration,
                 "seconds"
-            )
-
-            timeline_data.append(
-                {
-                    "frame": frame,
-                    "duration": duration
-                }
             )
 
         print()
         print("=====================")
+
         print(
             "FRAMES CREATED:",
             len(frames)
         )
+
         print("=====================")
+
+        # ---------------------------------------------
+        # BUILD SILENT MP4
+        # ---------------------------------------------
 
         print()
         print("Building MP4...")
 
         self.video_output.create_video(
-            frames,
-            timeline_data
+            frames
         )
 
         print()
-        print("Building audio timeline...")
-
-        audio_events = []
-
-        # --------------------------------------------------
-        # FRAME 0 = starting position
-        #
-        # The starting square is the first square of the
-        # first move.
-        # --------------------------------------------------
-
-        if move_paths:
-
-            first_move = move_paths[0]
-
-            if hasattr(first_move, "path"):
-
-                start_path = first_move.path
-
-                if start_path:
-
-                    audio_events.append(
-                        {
-                            "path": [
-                                start_path[0]
-                            ],
-                            "duration": frame_duration
-                        }
-                    )
-
-                else:
-
-                    audio_events.append(
-                        {
-                            "path": [],
-                            "duration": frame_duration
-                        }
-                    )
-
-        else:
-
-            audio_events.append(
-                {
-                    "path": [],
-                    "duration": frame_duration
-                }
-            )
-
-        # --------------------------------------------------
-        # Remaining frames
-        #
-        # Each frame represents the position AFTER the
-        # previous move, so its audio is the destination
-        # square of that move.
-        # --------------------------------------------------
-
-        for move in move_paths:
-
-            if hasattr(move, "path"):
-
-                path = move.path
-
-                if path:
-
-                    destination = path[-1]
-
-                    audio_events.append(
-                        {
-                            "path": [
-                                destination
-                            ],
-                            "duration": frame_duration
-                        }
-                    )
-
-                else:
-
-                    audio_events.append(
-                        {
-                            "path": [],
-                            "duration": frame_duration
-                        }
-                    )
-
-        # Make sure audio events exactly match frames.
-
-        audio_events = audio_events[:len(frames)]
-
-        while len(audio_events) < len(frames):
-
-            audio_events.append(
-                {
-                    "path": [],
-                    "duration": frame_duration
-                }
-            )
-
-        self.audio_timeline.build(
-            audio_events
-        )
-
-        print()
-        print("Building final video...")
-
-        self.final_output.combine()
-
-        print()
+        print("=====================")
         print("RENDER COMPLETE")
+        print("=====================")
