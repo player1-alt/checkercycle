@@ -1,0 +1,8 @@
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0001.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0002.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0003.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0004.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0005.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0006.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0007.mp3'
+file 'C:/Users/Hello/OneDrive/Documents/checkercycle/CheckerCycle_audio_clips/4s/clip_0008.mp3'

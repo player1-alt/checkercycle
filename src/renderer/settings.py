@@ -1,4 +1,3 @@
-
 import json
 import os
 
@@ -13,12 +12,11 @@ def load_settings():
     ):
 
         return {
-            "audio": {
-                "square_duration": 10.0,
-                "move_pause": 3.0
-            },
-            "video": {
-                "final_hold": 5.0
+            "timing": {
+                "mode_13": 13.0,
+                "mode_8": 8.0,
+                "mode_4": 4.0,
+                "transition": 1.0
             }
         }
 
@@ -32,29 +30,29 @@ def load_settings():
         settings = json.load(file)
 
 
-    if "audio" not in settings:
+    if "timing" not in settings:
 
-        settings["audio"] = {}
-
-
-    if "square_duration" not in settings["audio"]:
-
-        settings["audio"]["square_duration"] = 10.0
+        settings["timing"] = {}
 
 
-    if "move_pause" not in settings["audio"]:
+    if "mode_13" not in settings["timing"]:
 
-        settings["audio"]["move_pause"] = 3.0
-
-
-    if "video" not in settings:
-
-        settings["video"] = {}
+        settings["timing"]["mode_13"] = 13.0
 
 
-    if "final_hold" not in settings["video"]:
+    if "mode_8" not in settings["timing"]:
 
-        settings["video"]["final_hold"] = 5.0
+        settings["timing"]["mode_8"] = 8.0
+
+
+    if "mode_4" not in settings["timing"]:
+
+        settings["timing"]["mode_4"] = 4.0
+
+
+    if "transition" not in settings["timing"]:
+
+        settings["timing"]["transition"] = 1.0
 
 
     return settings

@@ -6,7 +6,7 @@ from src.renderer.board_renderer import BoardRenderer
 from src.renderer.outputs.image_output import ImageOutput
 from src.renderer.outputs.video_output import VideoOutput
 
-from src.renderer.timeline import Timeline
+from src.renderer.audio.audio_timeline import AudioTimeline
 
 
 class RendererEngine:
@@ -23,7 +23,11 @@ class RendererEngine:
 
         self.video_output = VideoOutput()
 
-        self.timeline = Timeline()
+        self.audio_timeline = AudioTimeline()
+
+    # =========================================================
+    # RENDER
+    # =========================================================
 
     def render(self, game_file):
 
@@ -36,12 +40,21 @@ class RendererEngine:
         print("Loading game:")
         print(game_file)
 
+        # =====================================================
+        # LOAD GAME FILE
+        # =====================================================
+
         with open(
             game_file,
-            "r"
+            "r",
+            encoding="utf-8"
         ) as file:
 
             text = file.read()
+
+        # =====================================================
+        # PARSE GAME
+        # =====================================================
 
         print()
         print("Parsing moves...")
@@ -55,12 +68,20 @@ class RendererEngine:
             len(variation.moves)
         )
 
+        # =====================================================
+        # CREATE STARTING POSITION
+        # =====================================================
+
         print()
         print("Creating starting position...")
 
         game_state = GameState()
 
         self.image_output.reset()
+
+        # =====================================================
+        # START POSITION
+        # =====================================================
 
         print()
         print("START POSITION")
@@ -74,9 +95,13 @@ class RendererEngine:
             game_state.pieces
         )
 
-        # ---------------------------------------------
-        # PLAY EVERY MOVE AND SAVE RESULTING POSITIONS
-        # ---------------------------------------------
+        # =====================================================
+        # PLAY EVERY MOVE
+        #
+        # Each resulting board position becomes a frame.
+        #
+        # Audio is built independently from the move sequence.
+        # =====================================================
 
         for move in variation.moves:
 
@@ -93,33 +118,24 @@ class RendererEngine:
                 game_state.pieces
             )
 
-        # ---------------------------------------------
-        # FRAME TIMELINE
-        # ---------------------------------------------
+        # =====================================================
+        # COLLECT SLIDESHOW FRAMES
+        # =====================================================
 
         print()
         print("=====================")
-        print("FRAME TIMELINE")
+        print("SLIDESHOW FRAMES")
         print("=====================")
 
-        frames = (
-            self.image_output.saved_frames
-        )
-
-        frame_duration = 13.0
+        frames = self.image_output.saved_frames
 
         for frame in frames:
 
             print(
-                frame,
-                "->",
-                frame_duration,
-                "seconds"
+                frame
             )
 
         print()
-        print("=====================")
-
         print(
             "FRAMES CREATED:",
             len(frames)
@@ -127,18 +143,137 @@ class RendererEngine:
 
         print("=====================")
 
-        # ---------------------------------------------
-        # BUILD SILENT MP4
-        # ---------------------------------------------
+        # =====================================================
+        # BUILD THREE SLIDESHOWS
+        #
+        # 13s
+        # 8s
+        # 4s
+        # =====================================================
 
         print()
-        print("Building MP4...")
+        print("=====================")
+        print("BUILDING SLIDESHOWS")
+        print("=====================")
 
         self.video_output.create_video(
             frames
         )
 
+        # =====================================================
+        # BUILD AUDIO
+        # =====================================================
+
+        print()
+        print("=====================")
+        print("BUILDING AUDIO")
+        print("=====================")
+
+        # -----------------------------------------------------
+        # IMPORTANT:
+        #
+        # Audio is based on the actual move paths.
+        #
+        # Example:
+        #
+        # 11-15
+        # 23-19
+        # 8-11
+        # 22-17
+        #
+        # becomes:
+        #
+        # [11, 15, 23, 19, 8, 11, 22, 17]
+        #
+        # The AudioTimeline handles the three modes:
+        #
+        # 13s
+        # 8s
+        # 4s
+        # -----------------------------------------------------
+
+        audio_outputs = (
+            self.audio_timeline.build(
+                variation.moves
+            )
+        )
+
+        # =====================================================
+        # REPORT AUDIO OUTPUTS
+        # =====================================================
+
+        print()
+        print("=====================")
+        print("AUDIO OUTPUTS")
+        print("=====================")
+
+        if not audio_outputs:
+
+            print(
+                "No audio outputs created."
+            )
+
+        # -----------------------------------------------------
+        # AUDIO OUTPUT IS A LIST
+        # -----------------------------------------------------
+
+        elif isinstance(
+            audio_outputs,
+            list
+        ):
+
+            for output in audio_outputs:
+
+                print(
+                    output
+                )
+
+        # -----------------------------------------------------
+        # AUDIO OUTPUT IS A DICTIONARY
+        #
+        # This keeps the engine compatible if we later change
+        # AudioTimeline to return:
+        #
+        # {
+        #     13: "...mp3",
+        #     8: "...mp3",
+        #     4: "...mp3"
+        # }
+        # -----------------------------------------------------
+
+        elif isinstance(
+            audio_outputs,
+            dict
+        ):
+
+            for mode, output in audio_outputs.items():
+
+                print(
+                    f"{mode}s:",
+                    output
+                )
+
+        # -----------------------------------------------------
+        # ANY OTHER RETURN TYPE
+        # -----------------------------------------------------
+
+        else:
+
+            print(
+                audio_outputs
+            )
+
+        # =====================================================
+        # COMPLETE
+        # =====================================================
+
         print()
         print("=====================")
         print("RENDER COMPLETE")
         print("=====================")
+        print()
+
+        return {
+            "frames": frames,
+            "audio": audio_outputs
+        }

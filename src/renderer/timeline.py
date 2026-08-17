@@ -1,48 +1,51 @@
-
 from src.renderer.settings import SETTINGS
 
 
 class Timeline:
     """
-    Controls the fixed CheckerCycle timing.
+    Controls CheckerCycle timing modes.
 
-    Each square receives:
-    - 10 seconds of audio
-    - 3 seconds of silence
+    Three timing modes are available:
 
-    Total cycle per square = 13 seconds.
+    13 seconds
+    8 seconds
+    4 seconds
+
+    The same timing values can be used independently
+    by slideshow and audio outputs.
     """
 
     def __init__(self):
 
-        self.audio_duration = SETTINGS["audio"]["square_duration"]
-        self.move_pause = SETTINGS["audio"]["move_pause"]
+        self.mode_13 = SETTINGS["timing"]["mode_13"]
+        self.mode_8 = SETTINGS["timing"]["mode_8"]
+        self.mode_4 = SETTINGS["timing"]["mode_4"]
 
-        self.square_cycle = (
-            self.audio_duration
-            + self.move_pause
+        self.transition = SETTINGS["timing"]["transition"]
+
+
+    def duration(self, mode):
+        """
+        Return the duration for the selected mode.
+        """
+
+        if mode == 13:
+            return self.mode_13
+
+        if mode == 8:
+            return self.mode_8
+
+        if mode == 4:
+            return self.mode_4
+
+        raise ValueError(
+            f"Unknown timeline mode: {mode}"
         )
 
-    def audio_time(self):
-        """
-        How long the MP3 for a square plays.
-        """
 
-        return self.audio_duration
-
-    def pause_time(self):
+    def transition_duration(self):
         """
-        How long the board waits after the MP3
-        before the piece moves.
+        Return the slideshow transition duration.
         """
 
-        return self.move_pause
-
-    def square_duration(self):
-        """
-        Total time occupied by one square:
-
-        audio + pause
-        """
-
-        return self.square_cycle
+        return self.transition

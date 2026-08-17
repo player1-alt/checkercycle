@@ -1,10 +1,8 @@
-
 {
-    "audio": {
-        "square_duration": 10.0,
-        "move_pause": 3.0
-    },
-    "video": {
-        "final_hold": 5.0
+    "timing": {
+        "mode_13": 13.0,
+        "mode_8": 8.0,
+        "mode_4": 4.0,
+        "transition": 1.0
     }
 }
