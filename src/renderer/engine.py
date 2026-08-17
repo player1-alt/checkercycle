@@ -8,6 +8,8 @@ from src.renderer.outputs.video_output import VideoOutput
 
 from src.renderer.audio.audio_timeline import AudioTimeline
 
+from src.renderer.naming.naming_node import NamingNode
+
 
 class RendererEngine:
 
@@ -25,6 +27,8 @@ class RendererEngine:
 
         self.audio_timeline = AudioTimeline()
 
+        self.naming_node = NamingNode()
+
     # =========================================================
     # RENDER
     # =========================================================
@@ -40,9 +44,9 @@ class RendererEngine:
         print("Loading game:")
         print(game_file)
 
-        # =====================================================
+        # -----------------------------------------------------
         # LOAD GAME FILE
-        # =====================================================
+        # -----------------------------------------------------
 
         with open(
             game_file,
@@ -52,9 +56,9 @@ class RendererEngine:
 
             text = file.read()
 
-        # =====================================================
+        # -----------------------------------------------------
         # PARSE GAME
-        # =====================================================
+        # -----------------------------------------------------
 
         print()
         print("Parsing moves...")
@@ -68,9 +72,9 @@ class RendererEngine:
             len(variation.moves)
         )
 
-        # =====================================================
+        # -----------------------------------------------------
         # CREATE STARTING POSITION
-        # =====================================================
+        # -----------------------------------------------------
 
         print()
         print("Creating starting position...")
@@ -79,9 +83,9 @@ class RendererEngine:
 
         self.image_output.reset()
 
-        # =====================================================
+        # -----------------------------------------------------
         # START POSITION
-        # =====================================================
+        # -----------------------------------------------------
 
         print()
         print("START POSITION")
@@ -95,13 +99,9 @@ class RendererEngine:
             game_state.pieces
         )
 
-        # =====================================================
+        # -----------------------------------------------------
         # PLAY EVERY MOVE
-        #
-        # Each resulting board position becomes a frame.
-        #
-        # Audio is built independently from the move sequence.
-        # =====================================================
+        # -----------------------------------------------------
 
         for move in variation.moves:
 
@@ -127,7 +127,9 @@ class RendererEngine:
         print("SLIDESHOW FRAMES")
         print("=====================")
 
-        frames = self.image_output.saved_frames
+        frames = (
+            self.image_output.saved_frames
+        )
 
         for frame in frames:
 
@@ -144,11 +146,7 @@ class RendererEngine:
         print("=====================")
 
         # =====================================================
-        # BUILD THREE SLIDESHOWS
-        #
-        # 13s
-        # 8s
-        # 4s
+        # BUILD THREE SILENT SLIDESHOWS
         # =====================================================
 
         print()
@@ -161,36 +159,13 @@ class RendererEngine:
         )
 
         # =====================================================
-        # BUILD AUDIO
+        # BUILD THREE AUDIO FILES
         # =====================================================
 
         print()
         print("=====================")
         print("BUILDING AUDIO")
         print("=====================")
-
-        # -----------------------------------------------------
-        # IMPORTANT:
-        #
-        # Audio is based on the actual move paths.
-        #
-        # Example:
-        #
-        # 11-15
-        # 23-19
-        # 8-11
-        # 22-17
-        #
-        # becomes:
-        #
-        # [11, 15, 23, 19, 8, 11, 22, 17]
-        #
-        # The AudioTimeline handles the three modes:
-        #
-        # 13s
-        # 8s
-        # 4s
-        # -----------------------------------------------------
 
         audio_outputs = (
             self.audio_timeline.build(
@@ -207,20 +182,7 @@ class RendererEngine:
         print("AUDIO OUTPUTS")
         print("=====================")
 
-        if not audio_outputs:
-
-            print(
-                "No audio outputs created."
-            )
-
-        # -----------------------------------------------------
-        # AUDIO OUTPUT IS A LIST
-        # -----------------------------------------------------
-
-        elif isinstance(
-            audio_outputs,
-            list
-        ):
+        if audio_outputs:
 
             for output in audio_outputs:
 
@@ -228,39 +190,48 @@ class RendererEngine:
                     output
                 )
 
-        # -----------------------------------------------------
-        # AUDIO OUTPUT IS A DICTIONARY
-        #
-        # This keeps the engine compatible if we later change
-        # AudioTimeline to return:
-        #
-        # {
-        #     13: "...mp3",
-        #     8: "...mp3",
-        #     4: "...mp3"
-        # }
-        # -----------------------------------------------------
-
-        elif isinstance(
-            audio_outputs,
-            dict
-        ):
-
-            for mode, output in audio_outputs.items():
-
-                print(
-                    f"{mode}s:",
-                    output
-                )
-
-        # -----------------------------------------------------
-        # ANY OTHER RETURN TYPE
-        # -----------------------------------------------------
-
         else:
 
             print(
-                audio_outputs
+                "No audio outputs created."
+            )
+
+        # =====================================================
+        # NAMING NODE
+        #
+        # IMPORTANT:
+        #
+        # The original TXT file is NOT renamed,
+        # moved, copied, or deleted.
+        #
+        # NamingNode only renames the generated
+        # CheckerCycle audio/video files.
+        # =====================================================
+
+        print()
+        print("=====================")
+        print("RUNNING NAMING NODE")
+        print("=====================")
+
+        named_outputs = (
+            self.naming_node.rename_outputs(
+                game_file
+            )
+        )
+
+        # =====================================================
+        # FINAL OUTPUT REPORT
+        # =====================================================
+
+        print()
+        print("=====================")
+        print("FINAL OUTPUTS")
+        print("=====================")
+
+        for output in named_outputs:
+
+            print(
+                output
             )
 
         # =====================================================
@@ -275,5 +246,6 @@ class RendererEngine:
 
         return {
             "frames": frames,
-            "audio": audio_outputs
+            "audio": audio_outputs,
+            "named_outputs": named_outputs
         }
