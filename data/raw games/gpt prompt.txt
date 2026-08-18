@@ -1,0 +1,13 @@
+Extract the trunk first, completely.
+Never infer trunk membership from brackets alone.
+Every numbered variation is an alternate timeline from its indicated parent.
+V1(T) → branches from the trunk.
+V5(4) → branches from V4.
+V6(T) → branches from the trunk.
+The move immediately following a branch marker is identified by the position/side-to-move, not textual proximity.
+Inline bracket material is still a variation, even when it isn't numbered.
+An inline alternative can exceptionally replace the following move, so we test the position rather than assuming the bracket's placement tells us the parent.
+A variation must be output from its actual starting position all the way to its endpoint, including the moves leading up to that branch.
+9-5 10-14 is therefore a variation, even though it is tiny and unnamed.
+Don't silently “clean up” or reinterpret the source.
+Before giving you extracted data, compare every branch against the actual trunk position and side to move.
