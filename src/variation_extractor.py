@@ -4,7 +4,7 @@ import sys
 
 
 # ============================================================
-# MOVE / VARIATION PATTERNS
+# MOVE PATTERN
 # ============================================================
 
 MOVE_PATTERN = re.compile(
@@ -12,22 +12,28 @@ MOVE_PATTERN = re.compile(
     r"(?:\s*(?:-|x|\|)\s*\d{1,2})*"
 )
 
+
+# ============================================================
+# NUMBERED VARIATION DECLARATIONS
+#
+# V1(T):
+# V5(4):
+# V7(6):
+# ============================================================
+
 VARIATION_PATTERN = re.compile(
-    r"\bV(\d+)\((T|\d+)\)\s*:",
-    re.IGNORECASE,
-)
-
-MARKER_PATTERN = re.compile(
-    r"(\d{1,2}\s*(?:-|x)\s*\d{1,2}"
-    r"(?:\s*(?:-|x|\|)\s*\d{1,2})*)"
-    r"(?:\s*\[[^\]]*\])?"
-    r"\s*\((\d+)\)"
+    r"\bV(\d+)\s*\((T|\d+)\)\s*:",
+    re.IGNORECASE
 )
 
 
 # ============================================================
-# BASIC HELPERS
+# HELPERS
 # ============================================================
+
+def clean_move(move):
+    return re.sub(r"\s+", "", move)
+
 
 def load_ballot(path):
     return Path(path).read_text(
@@ -35,39 +41,41 @@ def load_ballot(path):
     )
 
 
-def clean_move(move):
-    return re.sub(r"\s+", "", move)
-
-
-def extract_moves(text):
-    return [
-        clean_move(m)
-        for m in MOVE_PATTERN.findall(text)
-    ]
-
-
 # ============================================================
-# NUMBERED VARIATION MARKERS
+# FIND NUMBERED MARKERS
+#
+# Examples:
+#
+# 26-23[R](1)
+# 12-16(5)
+# 30-25(8)
+#
+# The marker belongs to THAT EXACT MOVE OCCURRENCE.
 # ============================================================
 
 def find_markers(text):
-
     markers = []
 
-    for match in MARKER_PATTERN.finditer(text):
-
-        move = clean_move(
-            match.group(1)
-        )
-
-        marker = int(
-            match.group(2)
-        )
-
+    for match in re.finditer(
+        r"("
+        r"\b\d{1,2}\s*(?:-|x)\s*\d{1,2}"
+        r"(?:\s*(?:-|x|\|)\s*\d{1,2})*"
+        r")"
+        r"\s*(?:\[R\])?"
+        r"\s*\((\d+)\)",
+        text,
+        re.IGNORECASE
+    ):
         markers.append(
             {
-                "marker": marker,
-                "move": move,
+                "move": clean_move(
+                    match.group(1)
+                ),
+                "marker": int(
+                    match.group(2)
+                ),
+                "start": match.start(1),
+                "end": match.end(1)
             }
         )
 
@@ -75,7 +83,132 @@ def find_markers(text):
 
 
 # ============================================================
-# SPLIT V SECTIONS
+# BRACKET PARSER
+#
+# [R] is NOT a branch.
+#
+# Real brackets become nodes.
+# Nested brackets become child nodes.
+# ============================================================
+
+def parse_brackets(text):
+    root = {
+        "items": []
+    }
+
+    stack = [root]
+    buffer = []
+
+    def flush_text():
+        nonlocal buffer
+
+        if buffer:
+            stack[-1]["items"].append(
+                {
+                    "type": "text",
+                    "text": "".join(buffer)
+                }
+            )
+
+        buffer = []
+
+    i = 0
+
+    while i < len(text):
+
+        # ----------------------------------------------------
+        # [R] IS ORDINARY TEXT
+        # ----------------------------------------------------
+
+        if text[i:i + 3].upper() == "[R]":
+            buffer.extend(
+                text[i:i + 3]
+            )
+            i += 3
+            continue
+
+        # ----------------------------------------------------
+        # REAL OPEN BRACKET
+        # ----------------------------------------------------
+
+        if text[i] == "[":
+            flush_text()
+
+            node = {
+                "items": []
+            }
+
+            stack[-1]["items"].append(
+                {
+                    "type": "bracket",
+                    "node": node
+                }
+            )
+
+            stack.append(node)
+            i += 1
+            continue
+
+        # ----------------------------------------------------
+        # CLOSE BRACKET
+        # ----------------------------------------------------
+
+        if text[i] == "]":
+            flush_text()
+
+            if len(stack) > 1:
+                stack.pop()
+            else:
+                buffer.append("]")
+
+            i += 1
+            continue
+
+        buffer.append(
+            text[i]
+        )
+
+        i += 1
+
+    flush_text()
+
+    return root
+
+
+# ============================================================
+# MOVES FROM TEXT
+# ============================================================
+
+def extract_moves(text):
+    return [
+        clean_move(match.group(0))
+        for match in MOVE_PATTERN.finditer(text)
+    ]
+
+
+# ============================================================
+# GET DIRECT MOVES FROM A BRACKET NODE
+#
+# Nested bracket contents are excluded.
+# ============================================================
+
+def direct_moves(node):
+    moves = []
+
+    for item in node["items"]:
+
+        if item["type"] == "text":
+            moves.extend(
+                extract_moves(
+                    item["text"]
+                )
+            )
+
+    return moves
+
+
+# ============================================================
+# SPLIT NUMBERED VARIATIONS
 # ============================================================
 
 def split_variations(text):
@@ -86,52 +219,70 @@ def split_variations(text):
 
     sections = []
 
-    if declarations:
+    # --------------------------------------------------------
+    # No V declarations
+    # --------------------------------------------------------
+
+    if not declarations:
 
         sections.append(
             {
                 "name": "T",
                 "parent": None,
-                "text": text[
-                    :declarations[0].start()
-                ],
+                "text": text
             }
         )
 
-        for i, match in enumerate(
-            declarations
-        ):
+        return sections
 
-            number = match.group(1)
-            parent = match.group(2)
+    # --------------------------------------------------------
+    # TRUNK
+    # --------------------------------------------------------
 
-            start = match.end()
+    sections.append(
+        {
+            "name": "T",
+            "parent": None,
+            "text": text[
+                :declarations[0].start()
+            ]
+        }
+    )
 
-            if i + 1 < len(declarations):
+    # --------------------------------------------------------
+    # V SECTIONS
+    # --------------------------------------------------------
 
-                end = declarations[
-                    i + 1
-                ].start()
+    for i, declaration in enumerate(
+        declarations
+    ):
 
-            else:
+        number = int(
+            declaration.group(1)
+        )
 
-                end = len(text)
+        parent = declaration.group(2)
 
-            sections.append(
-                {
-                    "name": f"V{number}",
-                    "parent": parent,
-                    "text": text[start:end],
-                }
-            )
+        start = declaration.end()
 
-    else:
+        if i + 1 < len(declarations):
+            end = declarations[
+                i + 1
+            ].start()
+        else:
+            end = len(text)
 
         sections.append(
             {
-                "name": "T",
-                "parent": None,
-                "text": text,
+                "name": f"V{number}",
+                "parent": (
+                    "T"
+                    if parent.upper() == "T"
+                    else f"V{parent}"
+                ),
+                "text": text[
+                    start:end
+                ]
             }
         )
 
@@ -139,54 +290,126 @@ def split_variations(text):
 
 
 # ============================================================
-# VARIATION MAP
+# BUILD VARIATION MAP
 # ============================================================
 
 def build_variation_map(sections):
 
-    variation_map = {}
+    result = {}
 
     for section in sections:
 
-        name = section["name"]
-        parent = section["parent"]
+        result[
+            section["name"]
+        ] = {
+            "name": section["name"],
+            "parent": section["parent"],
+            "text": section["text"]
+        }
 
-        if name == "T":
-
-            variation_map["T"] = {
-                "name": "T",
-                "parent": None,
-                "text": section["text"],
-            }
-
-        else:
-
-            if parent == "T":
-
-                parent_name = "T"
-
-            else:
-
-                parent_name = f"V{parent}"
-
-            variation_map[name] = {
-                "name": name,
-                "parent": parent_name,
-                "text": section["text"],
-            }
-
-    return variation_map
+    return result
 
 
 # ============================================================
-# RESOLVE NUMBERED VARIATION BRANCH POINTS
+# FIND EXACT MARKER IN A SECTION
+#
+# IMPORTANT:
+# We record the marker's MOVE INDEX while parsing the section.
+#
+# The move text is NOT used as a unique identifier.
 # ============================================================
 
-def resolve_branch_points(
+def marker_positions(text):
+
+    """
+    Find numbered markers on the DIRECT/main line only.
+
+    Moves inside [ ... ] are separate variations and must
+    NOT affect the move index of markers on the parent line.
+    """
+
+    root = parse_brackets(text)
+
+    result = []
+    move_index = 0
+
+    for item in root["items"]:
+
+        # ----------------------------------------------------
+        # ONLY PROCESS DIRECT TEXT
+        #
+        # Do NOT recurse into brackets.
+        # ----------------------------------------------------
+
+        if item["type"] != "text":
+            continue
+
+        text_part = item["text"]
+
+        moves = list(
+            MOVE_PATTERN.finditer(
+                text_part
+            )
+        )
+
+        markers = list(
+            re.finditer(
+                r"\b"
+                r"\d{1,2}\s*(?:-|x)\s*\d{1,2}"
+                r"(?:\s*(?:-|x|\|)\s*\d{1,2})*"
+                r"\s*(?:\[R\])?"
+                r"\s*\((\d+)\)",
+                text_part,
+                re.IGNORECASE
+            )
+        )
+
+        for move_match in moves:
+
+            move = clean_move(
+                move_match.group(0)
+            )
+
+            marker_number = None
+
+            for marker_match in markers:
+
+                # The marker must belong to THIS exact move.
+                if (
+                    marker_match.start()
+                    == move_match.start()
+                ):
+                    marker_number = int(
+                        marker_match.group(1)
+                    )
+                    break
+
+            if marker_number is not None:
+
+                result.append(
+                    {
+                        "marker": marker_number,
+                        "move": move,
+                        "index": move_index
+                    }
+                )
+
+            move_index += 1
+
+    return result
+
+
+# ============================================================
+# RESOLVE NUMBERED BRANCHES
+# ============================================================
+
+def resolve_numbered_branches(
     variation_map
 ):
 
-    for name, info in variation_map.items():
+    for name, info in (
+        variation_map.items()
+    ):
 
         if name == "T":
             continue
@@ -199,7 +422,8 @@ def resolve_branch_points(
 
         if parent_info is None:
 
-            info["marker"] = None
+            info["branch_marker"] = None
+            info["branch_index"] = None
             info["branch_move"] = None
 
             continue
@@ -208,226 +432,80 @@ def resolve_branch_points(
             name[1:]
         )
 
-        parent_markers = find_markers(
+        # ----------------------------------------------------
+        # The marker belongs to the PARENT.
+        # ----------------------------------------------------
+
+        parent_markers = marker_positions(
             parent_info["text"]
         )
 
         matches = [
-            marker
-            for marker in parent_markers
-            if marker["marker"] == number
+            m
+            for m in parent_markers
+            if m["marker"] == number
         ]
 
-        info["marker"] = number
+        if not matches:
 
-        if matches:
-
-            info["branch_move"] = (
-                matches[0]["move"]
-            )
-
-        else:
-
+            info["branch_marker"] = number
+            info["branch_index"] = None
             info["branch_move"] = None
 
-
-# ============================================================
-# BRACKET TREE
-# ============================================================
-
-def parse_bracket_tree(text):
-
-    """
-    Parse real square-bracket variations.
-
-    IMPORTANT:
-
-        [R]
-
-    is a notation marker, NOT a variation.
-
-    Therefore [R] is treated as ordinary text and
-    does not create a bracket node.
-
-    Nested real brackets are still preserved.
-    """
-
-    root = {
-        "items": []
-    }
-
-    stack = [root]
-
-    text_buffer = []
-
-    def flush_text():
-
-        nonlocal text_buffer
-
-        if text_buffer:
-
-            stack[-1]["items"].append(
-                (
-                    "text",
-                    "".join(text_buffer)
-                )
+            print(
+                f"WARNING: {name}: "
+                f"marker ({number}) was not found "
+                f"in {parent}."
             )
 
-            text_buffer = []
-
-    i = 0
-
-    while i < len(text):
-
-        # ----------------------------------------------------
-        # IGNORE [R] MARKERS
-        # ----------------------------------------------------
-
-        if text[i:i + 3].upper() == "[R]":
-
-            text_buffer.extend(
-                text[i:i + 3]
-            )
-
-            i += 3
             continue
 
-        # ----------------------------------------------------
-        # REAL OPEN BRACKET
-        # ----------------------------------------------------
+        marker = matches[0]
 
-        if text[i] == "[":
+        info["branch_marker"] = number
 
-            flush_text()
+        # IMPORTANT:
+        #
+        # This is the marker's index inside the
+        # parent's LOCAL section.
+        #
+        # build_numbered_game() converts it to an
+        # absolute index inside the parent's complete game.
 
-            node = {
-                "items": []
-            }
-
-            stack[-1]["items"].append(
-                (
-                    "bracket",
-                    node
-                )
-            )
-
-            stack.append(node)
-
-            i += 1
-            continue
-
-        # ----------------------------------------------------
-        # CLOSE BRACKET
-        # ----------------------------------------------------
-
-        if text[i] == "]":
-
-            flush_text()
-
-            if len(stack) > 1:
-
-                stack.pop()
-
-            else:
-
-                stack[-1]["items"].append(
-                    (
-                        "text",
-                        "]"
-                    )
-                )
-
-            i += 1
-            continue
-
-        # ----------------------------------------------------
-        # NORMAL CHARACTER
-        # ----------------------------------------------------
-
-        text_buffer.append(
-            text[i]
+        info["branch_index"] = (
+            marker["index"]
         )
 
-        i += 1
-
-    flush_text()
-
-    return root
+        info["branch_move"] = (
+            marker["move"]
+        )
 
 
 # ============================================================
-# DIRECT MOVES OF A BRACKET NODE
+# GET THE MAIN-LINE MOVES OF A SECTION
+#
+# Bracket contents are excluded.
 # ============================================================
 
-def extract_direct_moves(node):
+def section_main_moves(text):
 
-    """
-    Return only moves belonging directly to this node.
+    root = parse_brackets(text)
 
-    Nested bracket contents are ignored.
-    """
-
-    moves = []
-
-    for item_type, value in node["items"]:
-
-        if item_type == "text":
-
-            moves.extend(
-                extract_moves(value)
-            )
-
-    return moves
+    return direct_moves(root)
 
 
 # ============================================================
-# DIRECT MOVES OF A SECTION
-# ============================================================
-
-def get_section_direct_moves(text):
-
-    tree = parse_bracket_tree(
-        text
-    )
-
-    return extract_direct_moves(
-        tree
-    )
-
-
-# ============================================================
-# FIND LAST MATCHING MOVE
-# ============================================================
-
-def find_last_matching_move(
-    moves,
-    target
-):
-
-    for i in range(
-        len(moves) - 1,
-        -1,
-        -1
-    ):
-
-        if moves[i] == target:
-            return i
-
-    return None
-
-
-# ============================================================
-# NUMBERED VARIATION COMPLETE-GAME BUILDER
+# BUILD NUMBERED GAME
+#
+# THIS SECTION IS THE ORIGINAL WORKING NUMBERED-VARIATION
+# LOGIC. DO NOT CHANGE.
 # ============================================================
 
 def build_numbered_game(
     name,
     variation_map,
-    cache=None
+    cache
 ):
-
-    if cache is None:
-        cache = {}
 
     if name in cache:
         return cache[name]
@@ -440,230 +518,468 @@ def build_numbered_game(
 
     if name == "T":
 
-        moves = get_section_direct_moves(
+        game = section_main_moves(
             info["text"]
         )
 
-        cache[name] = moves
+        cache[name] = game
 
-        return moves
+        return game
 
     # --------------------------------------------------------
-    # PARENT
+    # BUILD COMPLETE PARENT FIRST
     # --------------------------------------------------------
 
     parent_name = info["parent"]
 
-    parent_moves = build_numbered_game(
+    parent_game = build_numbered_game(
         parent_name,
         variation_map,
         cache
     )
 
-    branch_move = info["branch_move"]
-
-    own_moves = get_section_direct_moves(
-        info["text"]
-    )
+    branch_index = info[
+        "branch_index"
+    ]
 
     # --------------------------------------------------------
     # NO MARKER
     # --------------------------------------------------------
 
-    if branch_move is None:
-
-        result = (
-            parent_moves
-            + own_moves
-        )
-
-        cache[name] = result
-
-        return result
-
-    # --------------------------------------------------------
-    # FIND BRANCH MOVE
-    # --------------------------------------------------------
-
-    branch_index = find_last_matching_move(
-        parent_moves,
-        branch_move
-    )
-
     if branch_index is None:
 
         print(
-            f"WARNING: {name}: "
-            f"branch move {branch_move} "
-            f"not found in parent game."
+            f"WARNING: {name} cannot be "
+            f"placed into {parent_name}."
         )
 
-        result = (
-            parent_moves
-            + own_moves
+        game = (
+            parent_game
+            + section_main_moves(
+                info["text"]
+            )
         )
 
-        cache[name] = result
+        cache[name] = game
 
-        return result
+        return game
 
     # --------------------------------------------------------
-    # REPLACE BRANCH MOVE
+    # IMPORTANT FIX
+    #
+    # branch_index is LOCAL to the parent's section.
+    #
+    # parent_game is the COMPLETE reconstructed
+    # parent game.
+    #
+    # Therefore we must add the number of moves
+    # inherited by the parent before its own section.
     # --------------------------------------------------------
 
-    prefix = parent_moves[
-        :branch_index
-    ]
-
-    result = (
-        prefix
-        + own_moves
+    parent_local_moves = section_main_moves(
+        variation_map[parent_name]["text"]
     )
 
-    cache[name] = result
+    inherited_length = (
+        len(parent_game)
+        - len(parent_local_moves)
+    )
 
-    return result
+    absolute_branch_index = (
+        inherited_length
+        + branch_index
+    )
+
+    # --------------------------------------------------------
+    # CHILD'S OWN MAIN LINE
+    # --------------------------------------------------------
+
+    child_moves = section_main_moves(
+        info["text"]
+    )
+
+    # --------------------------------------------------------
+    # REPLACE THE MARKED MOVE
+    #
+    # The marked move itself is discarded.
+    # Everything after it in parent is discarded.
+    # --------------------------------------------------------
+
+    prefix = parent_game[
+        :absolute_branch_index
+    ]
+
+    game = (
+        prefix
+        + child_moves
+    )
+
+    cache[name] = game
+
+    return game
 
 
 # ============================================================
-# BRACKET VARIATIONS
+# BRACKET VARIATION EXTRACTION
+#
+# BRACKETS ARE TREATED LIKE NUMBERED VARIATIONS.
+#
+# A bracket variation has:
+#
+#   parent
+#   branch_index
+#   branch_move
+#   own moves
+#
+# Example:
+#
+# T:
+# A B C D E F G
+#
+#      [ X Y Z ]
+#
+# If the bracket follows D:
+#
+# B1 = A B C X Y Z
+#
+# NOT:
+#
+# B1 = D X Y Z
+#
+# The complete parent game is reconstructed first.
 # ============================================================
 
-def extract_all_bracket_games(
-    section_text,
-    base_history,
-    section_name,
+
+# ============================================================
+# GET DIRECT ITEMS OF A NODE
+# ============================================================
+
+def node_direct_items(node):
+    return [
+        item
+        for item in node["items"]
+    ]
+
+
+# ============================================================
+# FIND ALL BRACKETS IN A TEXT SECTION
+#
+# Each bracket becomes a variation-like record.
+#
+# The parent is the variation whose text contains the bracket.
+#
+# For example:
+#
+# T  -> B1
+# V2 -> B2
+# V3 -> B3
+# B1 -> B4
+# ============================================================
+
+def find_bracket_variations(
+    text,
+    parent_name,
     counter
 ):
 
-    root = parse_bracket_tree(
-        section_text
-    )
+    root = parse_brackets(text)
 
     results = []
 
-    walk_node_for_brackets(
+    # --------------------------------------------------------
+    # Walk only this section.
+    #
+    # Nested brackets are discovered recursively.
+    # --------------------------------------------------------
+
+    def walk(
+        node,
+        direct_history,
+        current_parent
+    ):
+
+        history = list(
+            direct_history
+        )
+
+        for item in node["items"]:
+
+            # ------------------------------------------------
+            # NORMAL TEXT
+            # ------------------------------------------------
+
+            if item["type"] == "text":
+
+                history.extend(
+                    extract_moves(
+                        item["text"]
+                    )
+                )
+
+                continue
+
+            # ------------------------------------------------
+            # BRACKET
+            # ------------------------------------------------
+
+            child = item["node"]
+
+            # The bracket replaces the move immediately
+            # before its opening bracket.
+            branch_index = (
+                len(history) - 1
+            )
+
+            branch_move = (
+                history[-1]
+                if history
+                else None
+            )
+
+            # ------------------------------------------------
+            # Direct moves belonging to this bracket.
+            #
+            # Nested bracket moves are excluded.
+            # ------------------------------------------------
+
+            child_moves = direct_moves(
+                child
+            )
+
+            counter[0] += 1
+
+            name = (
+                f"B{counter[0]}"
+            )
+
+            results.append(
+                {
+                    "name": name,
+                    "parent": current_parent,
+                    "branch_index": branch_index,
+                    "branch_move": branch_move,
+                    "moves": child_moves
+                }
+            )
+
+            # ------------------------------------------------
+            # IMPORTANT:
+            #
+            # Nested brackets belong to THIS bracket.
+            #
+            # The history entering the child consists of
+            # the parent history BEFORE the outer bracket,
+            # followed by the OUTER bracket's direct moves
+            # processed up to the nested bracket.
+            #
+            # This makes:
+            #
+            # T + V2 + B1 + B2
+            #
+            # work naturally.
+            # ------------------------------------------------
+
+            child_history = list(
+                history[:-1]
+                if history
+                else []
+            )
+
+            walk(
+                child,
+                child_history,
+                name
+            )
+
+            # ------------------------------------------------
+            # The parent/main line continues after the bracket.
+            #
+            # Therefore DO NOT modify `history`.
+            # ------------------------------------------------
+
+    walk(
         root,
-        list(base_history),
-        results,
-        counter,
-        section_name
+        [],
+        parent_name
     )
 
     return results
 
 
-def walk_node_for_brackets(
-    node,
-    history_before_node,
-    results,
-    counter,
-    parent_name
+# ============================================================
+# BUILD ONE BRACKET GAME
+#
+# This deliberately mirrors build_numbered_game().
+#
+# Parent:
+#
+#     T
+#     V2
+#     V3
+#     B1
+#
+# is fully reconstructed first.
+#
+# Then the bracket branch point is applied.
+# ============================================================
+
+def build_bracket_game(
+    name,
+    bracket_map,
+    variation_map,
+    numbered_cache,
+    bracket_cache
 ):
 
-    current_history = list(
-        history_before_node
+    if name in bracket_cache:
+        return bracket_cache[name]
+
+    info = bracket_map[name]
+
+    parent_name = info["parent"]
+
+    # --------------------------------------------------------
+    # BUILD COMPLETE PARENT
+    # --------------------------------------------------------
+
+    if parent_name in bracket_map:
+
+        parent_game = build_bracket_game(
+            parent_name,
+            bracket_map,
+            variation_map,
+            numbered_cache,
+            bracket_cache
+        )
+
+    else:
+
+        parent_game = build_numbered_game(
+            parent_name,
+            variation_map,
+            numbered_cache
+        )
+
+    # --------------------------------------------------------
+    # BRANCH INDEX IS LOCAL TO THE PARENT SECTION.
+    #
+    # For a bracket inside V2, the index is based on V2's
+    # own local moves.
+    #
+    # For a bracket inside B1, the index is based on B1's
+    # own bracket continuation.
+    # --------------------------------------------------------
+
+    branch_index = info[
+        "branch_index"
+    ]
+
+    # --------------------------------------------------------
+    # Determine how many inherited moves exist before the
+    # parent's own local section.
+    #
+    # This mirrors build_numbered_game().
+    # --------------------------------------------------------
+
+    if parent_name in bracket_map:
+
+        parent_local_length = len(
+            bracket_map[parent_name]["moves"]
+        )
+
+    else:
+
+        parent_local_length = len(
+            section_main_moves(
+                variation_map[parent_name]["text"]
+            )
+        )
+
+    inherited_length = (
+        len(parent_game)
+        - parent_local_length
     )
 
-    for item_type, value in node["items"]:
+    absolute_branch_index = (
+        inherited_length
+        + branch_index
+    )
 
-        # ----------------------------------------------------
-        # NORMAL TEXT
-        # ----------------------------------------------------
+    # --------------------------------------------------------
+    # Replace the branch move.
+    #
+    # Everything from the branch move onward in the parent
+    # is discarded.
+    # --------------------------------------------------------
 
-        if item_type == "text":
+    prefix = parent_game[
+        :absolute_branch_index
+    ]
 
-            current_history.extend(
-                extract_moves(value)
-            )
+    branch_moves = info[
+        "moves"
+    ]
 
-            continue
+    game = (
+        prefix
+        + branch_moves
+    )
 
-        # ----------------------------------------------------
-        # REAL BRACKET
-        # ----------------------------------------------------
+    bracket_cache[name] = game
 
-        child = value
-
-        bracket_start_history = list(
-            current_history
-        )
-
-        child_direct_moves = (
-            extract_direct_moves(
-                child
-            )
-        )
-
-        # ----------------------------------------------------
-        # ONLY CREATE A GAME IF THE BRACKET
-        # ACTUALLY CONTAINS MOVES
-        # ----------------------------------------------------
-
-        if child_direct_moves:
-
-            counter[0] += 1
-
-            bracket_name = (
-                f"B{counter[0]}"
-            )
-
-            bracket_game = (
-                bracket_start_history
-                + child_direct_moves
-            )
-
-            results.append(
-                {
-                    "name": bracket_name,
-                    "parent": parent_name,
-                    "moves": bracket_game,
-                }
-            )
-
-            # ------------------------------------------------
-            # NESTED BRACKETS
-            # ------------------------------------------------
-
-            walk_node_for_brackets(
-                child,
-                bracket_game,
-                results,
-                counter,
-                bracket_name
-            )
-
-        else:
-
-            # ------------------------------------------------
-            # EMPTY BRACKET
-            #
-            # Should normally not happen now except for
-            # unusual malformed notation.
-            # Do NOT create a game.
-            # ------------------------------------------------
-
-            walk_node_for_brackets(
-                child,
-                bracket_start_history,
-                results,
-                counter,
-                parent_name
-            )
-
-        # ----------------------------------------------------
-        # RETURN TO PARENT
-        #
-        # The bracket is a diversion, so its moves are NOT
-        # added to the parent history.
-        # ----------------------------------------------------
+    return game
 
 
 # ============================================================
-# COMPLETE GAMES
+# BUILD BRACKET MAP
 # ============================================================
 
-def build_all_complete_games(
+def build_bracket_map(
+    sections,
+    variation_map
+):
+
+    bracket_map = {}
+
+    counter = [0]
+
+    # --------------------------------------------------------
+    # IMPORTANT:
+    #
+    # Brackets are found independently inside EVERY section.
+    #
+    # T
+    # V1
+    # V2
+    # V3
+    #
+    # This means a bracket in V3 has parent V3, not T.
+    # --------------------------------------------------------
+
+    for section in sections:
+
+        section_brackets = (
+            find_bracket_variations(
+                section["text"],
+                section["name"],
+                counter
+            )
+        )
+
+        for bracket in section_brackets:
+
+            bracket_map[
+                bracket["name"]
+            ] = bracket
+
+    return bracket_map
+
+
+# ============================================================
+# BUILD ALL GAMES
+# ============================================================
+
+def build_all_games(
     sections,
     variation_map
 ):
@@ -672,9 +988,11 @@ def build_all_complete_games(
 
     numbered_cache = {}
 
-    # ========================================================
-    # FIRST: BUILD TRUNK + NUMBERED VARIATIONS
-    # ========================================================
+    # --------------------------------------------------------
+    # FIRST:
+    #
+    # Build all numbered variations exactly as before.
+    # --------------------------------------------------------
 
     for section in sections:
 
@@ -688,67 +1006,38 @@ def build_all_complete_games(
             )
         )
 
-    # ========================================================
-    # SECOND: BUILD BRACKET VARIATIONS
-    # ========================================================
+    # --------------------------------------------------------
+    # SECOND:
+    #
+    # Discover all bracket variations.
+    # --------------------------------------------------------
 
-    bracket_counter = [
-        0
-    ]
+    bracket_map = build_bracket_map(
+        sections,
+        variation_map
+    )
 
-    for section in sections:
+    bracket_cache = {}
 
-        section_name = section["name"]
+    # --------------------------------------------------------
+    # THIRD:
+    #
+    # Build each bracket exactly like a numbered variation.
+    #
+    # A bracket can itself be the parent of another bracket.
+    # --------------------------------------------------------
 
-        # ----------------------------------------------------
-        # IMPORTANT:
-        #
-        # For T:
-        #
-        #     base history = []
-        #
-        # because the T section itself must be walked from
-        # the beginning.
-        #
-        # For Vn:
-        #
-        #     base history = COMPLETE PARENT GAME
-        #
-        # NOT the complete Vn game.
-        # ----------------------------------------------------
+    for name in bracket_map:
 
-        if section_name == "T":
-
-            base_history = []
-
-        else:
-
-            parent_name = (
-                variation_map[
-                    section_name
-                ]["parent"]
-            )
-
-            base_history = (
-                complete_games[
-                    parent_name
-                ]
-            )
-
-        bracket_games = (
-            extract_all_bracket_games(
-                section["text"],
-                base_history,
-                section_name,
-                bracket_counter
+        complete_games[name] = (
+            build_bracket_game(
+                name,
+                bracket_map,
+                variation_map,
+                numbered_cache,
+                bracket_cache
             )
         )
-
-        for game in bracket_games:
-
-            complete_games[
-                game["name"]
-            ] = game["moves"]
 
     return complete_games
 
@@ -784,7 +1073,7 @@ def write_game(
     )
 
 
-def write_complete_games(
+def write_all_games(
     complete_games,
     output_dir
 ):
@@ -806,46 +1095,8 @@ def write_complete_games(
 
 
 # ============================================================
-# DISPLAY
+# DISPLAY VARIATION MAP
 # ============================================================
-
-def print_sections(
-    sections
-):
-
-    print()
-    print(
-        "=== SECTIONS ==="
-    )
-
-    for section in sections:
-
-        moves = get_section_direct_moves(
-            section["text"]
-        )
-
-        print()
-        print(
-            section["name"]
-        )
-
-        if section["parent"]:
-
-            print(
-                f"  declared parent: "
-                f"{section['parent']}"
-            )
-
-        print(
-            f"  direct moves found: "
-            f"{len(moves)}"
-        )
-
-        print(
-            f"  first moves: "
-            f"{moves[:8]}"
-        )
-
 
 def print_variation_map(
     variation_map
@@ -863,6 +1114,7 @@ def print_variation_map(
         if name == "T":
 
             print("T")
+
             continue
 
         print()
@@ -875,91 +1127,72 @@ def print_variation_map(
 
         print(
             f"  marker: "
-            f"({info['marker']})"
+            f"({info['branch_marker']})"
         )
 
         print(
-            f"  replaces: "
+            f"  branch move: "
             f"{info['branch_move']}"
         )
 
+        print(
+            f"  branch index: "
+            f"{info['branch_index']}"
+        )
 
-def print_bracket_trees(
-    sections
+
+# ============================================================
+# DISPLAY BRACKET MAP
+# ============================================================
+
+def print_bracket_map(
+    bracket_map
 ):
 
     print()
     print(
-        "=== BRACKET TREES BY SECTION ==="
+        "=== BRACKET MAP ==="
     )
 
-    for section in sections:
+    if not bracket_map:
+
+        print(
+            "No bracket variations found."
+        )
+
+        return
+
+    for name, info in (
+        bracket_map.items()
+    ):
 
         print()
+        print(name)
+
         print(
-            f"=== {section['name']} ==="
+            f"  parent: "
+            f"{info['parent']}"
         )
 
-        tree = parse_bracket_tree(
-            section["text"]
+        print(
+            f"  branch move: "
+            f"{info['branch_move']}"
         )
 
-        has_bracket = any(
-            item_type == "bracket"
-            for item_type, value
-            in tree["items"]
+        print(
+            f"  branch index: "
+            f"{info['branch_index']}"
         )
 
-        if not has_bracket:
-
-            print(
-                "NO BRACKETS"
-            )
-
-            continue
-
-        print_bracket_tree(
-            tree
+        print(
+            f"  bracket moves: "
+            f"{len(info['moves'])}"
         )
 
 
-def print_bracket_tree(
-    node,
-    depth=0
-):
-
-    indent = "    " * depth
-
-    for item_type, value in node["items"]:
-
-        if item_type == "text":
-
-            moves = extract_moves(
-                value
-            )
-
-            if moves:
-
-                print(
-                    f"{indent}MOVES: "
-                    f"{moves}"
-                )
-
-        else:
-
-            print(
-                f"{indent}[ BRACKET OPEN"
-            )
-
-            print_bracket_tree(
-                value,
-                depth + 1
-            )
-
-            print(
-                f"{indent}] BRACKET CLOSE"
-            )
-
+# ============================================================
+# DISPLAY GAMES
+# ============================================================
 
 def print_complete_games(
     complete_games
@@ -976,8 +1209,7 @@ def print_complete_games(
 
         print()
         print(
-            f"{name}: "
-            f"{len(moves)} moves"
+            f"{name}: {len(moves)} moves"
         )
 
         print(
@@ -998,8 +1230,7 @@ def main():
         )
 
         print(
-            "python "
-            "src/variation_extractor.py "
+            "py src\\variation_extractor.py "
             "<ballot.txt>"
         )
 
@@ -1014,7 +1245,7 @@ def main():
     )
 
     # --------------------------------------------------------
-    # SPLIT NUMBERED SECTIONS
+    # SPLIT T / V1 / V2 / ...
     # --------------------------------------------------------
 
     sections = split_variations(
@@ -1032,42 +1263,45 @@ def main():
     )
 
     # --------------------------------------------------------
-    # FIND NUMBERED BRANCH POINTS
+    # RESOLVE NUMBERED MARKERS
+    #
+    # UNCHANGED.
     # --------------------------------------------------------
 
-    resolve_branch_points(
+    resolve_numbered_branches(
         variation_map
-    )
-
-    # --------------------------------------------------------
-    # DISPLAY STRUCTURE
-    # --------------------------------------------------------
-
-    print_sections(
-        sections
     )
 
     print_variation_map(
         variation_map
     )
 
-    print_bracket_trees(
-        sections
-    )
-
     # --------------------------------------------------------
-    # BUILD COMPLETE GAMES
+    # BUILD ALL COMPLETE GAMES
     # --------------------------------------------------------
 
     complete_games = (
-        build_all_complete_games(
+        build_all_games(
             sections,
             variation_map
         )
     )
 
     # --------------------------------------------------------
-    # DISPLAY COMPLETE GAMES
+    # BUILD BRACKET MAP FOR DISPLAY
+    # --------------------------------------------------------
+
+    bracket_map = build_bracket_map(
+        sections,
+        variation_map
+    )
+
+    print_bracket_map(
+        bracket_map
+    )
+
+    # --------------------------------------------------------
+    # DISPLAY
     # --------------------------------------------------------
 
     print_complete_games(
@@ -1075,7 +1309,7 @@ def main():
     )
 
     # --------------------------------------------------------
-    # WRITE FILES
+    # WRITE
     # --------------------------------------------------------
 
     output_dir = (
@@ -1083,7 +1317,7 @@ def main():
         / "output"
     )
 
-    write_complete_games(
+    write_all_games(
         complete_games,
         output_dir
     )
@@ -1094,7 +1328,7 @@ def main():
     )
 
     print(
-        f"Total complete games: "
+        f"Total games: "
         f"{len(complete_games)}"
     )
 
