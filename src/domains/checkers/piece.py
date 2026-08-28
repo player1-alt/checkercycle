@@ -1,18 +1,17 @@
 class Piece:
     """
-    Represents a checker piece.
+    Represents a checker piece with a permanent identity.
     """
 
-    def __init__(self, color, king=False):
+    def __init__(self, color, name, king=False):
 
         self.color = color
+        self.name = name
         self.king = king
-
 
     def promote(self):
 
         self.king = True
-
 
     def symbol(self):
 
@@ -23,7 +22,6 @@ class Piece:
 
             else:
                 return "W♛"
-
 
         else:
 

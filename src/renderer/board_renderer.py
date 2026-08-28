@@ -4,6 +4,9 @@ from src.domains.checkers.square_mapper import SquareMapper
 class BoardRenderer:
     """
     Converts game state into a visual board display.
+
+    Each piece displays its permanent name.
+    The name follows the piece wherever it moves.
     """
 
     def __init__(self):
@@ -34,15 +37,29 @@ class BoardRenderer:
 
             if piece is not None:
 
-                row, column = self.square_mapper.coordinates(square)
+                row, column = (
+                    self.square_mapper.coordinates(square)
+                )
 
-                display_board[row][column] = piece.symbol()
+                # Permanent piece name
+                name = piece.name
+
+                # Mark kings
+                if piece.king:
+                    name = f"{name}♛"
+
+                display_board[row][column] = name
 
 
         # Print board
         print()
 
         for row in display_board:
-            print(" ".join(f"{cell:>2}" for cell in row))
+            print(
+                " ".join(
+                    f"{cell:>10}"
+                    for cell in row
+                )
+            )
 
         print()

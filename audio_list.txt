@@ -1,4 +1,0 @@
-file 'C:\Users\Hello\OneDrive\Documents\checkercycle\CheckerCycle_audio_clips\clip_0001.mp3'
-file 'C:\Users\Hello\OneDrive\Documents\checkercycle\CheckerCycle_audio_clips\clip_0002.mp3'
-file 'C:\Users\Hello\OneDrive\Documents\checkercycle\CheckerCycle_audio_clips\clip_0003.mp3'
-file 'C:\Users\Hello\OneDrive\Documents\checkercycle\CheckerCycle_audio_clips\clip_0004.mp3'

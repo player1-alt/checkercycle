@@ -6,6 +6,9 @@ from src.domains.checkers.square_mapper import SquareMapper
 class ImageOutput:
     """
     Creates board images and animation frames.
+
+    Each checker displays its permanent piece name.
+    The name follows the piece as it moves.
     """
 
     def __init__(self):
@@ -17,14 +20,75 @@ class ImageOutput:
         self.saved_frames = []
 
 
+        # Base font
         try:
-            self.font = ImageFont.truetype(
-                "arial.ttf",
-                10
+
+            self.font_path = "arial.ttf"
+
+        except:
+
+            self.font_path = None
+
+
+
+    def get_piece_font(
+        self,
+        draw,
+        name,
+        max_width
+    ):
+
+        """
+        Automatically chooses a font size that fits
+        the permanent piece name inside the checker.
+        """
+
+        # Start reasonably large
+        size = 14
+
+
+        while size >= 6:
+
+            try:
+
+                font = ImageFont.truetype(
+                    self.font_path,
+                    size
+                )
+
+            except:
+
+                font = ImageFont.load_default()
+
+
+            bbox = draw.textbbox(
+                (0, 0),
+                name,
+                font=font
+            )
+
+
+            width = bbox[2] - bbox[0]
+
+
+            if width <= max_width:
+
+                return font
+
+
+            size -= 1
+
+
+        try:
+
+            return ImageFont.truetype(
+                self.font_path,
+                6
             )
 
         except:
-            self.font = ImageFont.load_default()
+
+            return ImageFont.load_default()
 
 
 
@@ -38,7 +102,10 @@ class ImageOutput:
 
 
 
-    def draw_board(self, draw):
+    def draw_board(
+        self,
+        draw
+    ):
 
         size = 640
         square_size = size // 8
@@ -57,20 +124,27 @@ class ImageOutput:
                             (column + 1) * square_size,
                             (row + 1) * square_size
                         ],
-                        fill=(80,80,80)
+                        fill=(80, 80, 80)
                     )
 
 
 
-    def draw_square_labels(self, draw):
+    def draw_square_labels(
+        self,
+        draw
+    ):
 
         size = 640
         square_size = size // 8
 
 
-        for square in range(1,33):
+        for square in range(1, 33):
 
-            row,column = self.square_mapper.coordinates(square)
+            row, column = (
+                self.square_mapper.coordinates(
+                    square
+                )
+            )
 
 
             x = column * square_size + 3
@@ -85,10 +159,10 @@ class ImageOutput:
 
 
             draw.text(
-                (x,y),
+                (x, y),
                 str(square),
                 fill=colour,
-                font=self.font
+                font=ImageFont.load_default()
             )
 
 
@@ -99,6 +173,7 @@ class ImageOutput:
         row,
         column,
         colour,
+        name,
         king=False
     ):
 
@@ -121,29 +196,97 @@ class ImageOutput:
         radius = square_size // 3
 
 
+        # ==========================
+        # DRAW CHECKER
+        # ==========================
+
         draw.ellipse(
             [
-                center_x-radius,
-                center_y-radius,
-                center_x+radius,
-                center_y+radius
+                center_x - radius,
+                center_y - radius,
+                center_x + radius,
+                center_y + radius
             ],
             fill=colour,
             outline="black"
         )
 
 
+        # ==========================
+        # PIECE NAME
+        # ==========================
+
+        display_name = name
+
+
+        # Add king marker
         if king:
 
-            draw.text(
-                (
-                    center_x-8,
-                    center_y-8
-                ),
-                "K",
-                fill="gold",
-                font=self.font
-            )
+            display_name = f"{name}♛"
+
+
+        # Available width inside checker
+        max_width = (
+            radius * 2
+            - 8
+        )
+
+
+        font = self.get_piece_font(
+            draw,
+            display_name,
+            max_width
+        )
+
+
+        bbox = draw.textbbox(
+            (0, 0),
+            display_name,
+            font=font
+        )
+
+
+        text_width = (
+            bbox[2] - bbox[0]
+        )
+
+
+        text_height = (
+            bbox[3] - bbox[1]
+        )
+
+
+        text_x = (
+            center_x
+            - text_width // 2
+        )
+
+
+        text_y = (
+            center_y
+            - text_height // 2
+            - bbox[1]
+        )
+
+
+        # Black text on white pieces,
+        # white text on red pieces
+        text_colour = (
+            "black"
+            if colour == "white"
+            else "white"
+        )
+
+
+        draw.text(
+            (
+                text_x,
+                text_y
+            ),
+            display_name,
+            fill=text_colour,
+            font=font
+        )
 
 
 
@@ -153,14 +296,18 @@ class ImageOutput:
         game_state
     ):
 
-        for square,piece in game_state.pieces.position.items():
+        for square, piece in (
+            game_state.pieces.position.items()
+        ):
 
             if piece is None:
                 continue
 
 
-            row,column = (
-                self.square_mapper.coordinates(square)
+            row, column = (
+                self.square_mapper.coordinates(
+                    square
+                )
             )
 
 
@@ -176,19 +323,23 @@ class ImageOutput:
                 row,
                 column,
                 colour,
+                piece.name,
                 piece.king
             )
 
 
 
-    def display(self, game_state):
+    def display(
+        self,
+        game_state
+    ):
 
         size = 640
 
 
         image = Image.new(
             "RGB",
-            (size,size),
+            (size, size),
             "white"
         )
 
@@ -214,7 +365,9 @@ class ImageOutput:
         image.save(filename)
 
 
-        self.saved_frames.append(filename)
+        self.saved_frames.append(
+            filename
+        )
 
 
         print(
@@ -223,7 +376,6 @@ class ImageOutput:
 
 
         self.frame_counter += 1
-
 
 
 
@@ -239,7 +391,7 @@ class ImageOutput:
 
         image = Image.new(
             "RGB",
-            (size,size),
+            (size, size),
             "white"
         )
 
@@ -252,8 +404,9 @@ class ImageOutput:
         self.draw_square_labels(draw)
 
 
-
-        # Find moving piece safely
+        # ==========================
+        # FIND MOVING PIECE
+        # ==========================
 
         moving_piece = (
             game_state.pieces.position.get(
@@ -262,11 +415,13 @@ class ImageOutput:
         )
 
 
+        # ==========================
+        # DRAW OTHER PIECES
+        # ==========================
 
-        # Draw all other pieces
-
-        for square,piece in game_state.pieces.position.items():
-
+        for square, piece in (
+            game_state.pieces.position.items()
+        ):
 
             if square == moving_square:
                 continue
@@ -276,9 +431,10 @@ class ImageOutput:
                 continue
 
 
-
-            row,column = (
-                self.square_mapper.coordinates(square)
+            row, column = (
+                self.square_mapper.coordinates(
+                    square
+                )
             )
 
 
@@ -294,17 +450,18 @@ class ImageOutput:
                 row,
                 column,
                 colour,
+                piece.name,
                 piece.king
             )
 
 
-
-        # Draw moving piece
+        # ==========================
+        # DRAW MOVING PIECE
+        # ==========================
 
         if moving_piece is not None:
 
-
-            row,column = position
+            row, column = position
 
 
             colour = (
@@ -319,6 +476,7 @@ class ImageOutput:
                 row,
                 column,
                 colour,
+                moving_piece.name,
                 moving_piece.king
             )
 
@@ -329,7 +487,6 @@ class ImageOutput:
                 "WARNING: Missing moving piece:",
                 moving_square
             )
-
 
 
         filename = (
